@@ -67,7 +67,7 @@ struct punct_entry {
     uint32_t cps[5]; /* C L U R D, 0 = none */
 };
 static const struct punct_entry kana_punct_table[] = {
-    { "、", {KEY_COMMA, KEY_DOT, 0xFF1F, 0, 0xFF01} }, /* C, L. U？ R- D！ */
+    { "、", {KEY_COMMA, KEY_DOT, 0xFF1F, 0, 0xFF01} }, /* U/D via COMP: shift lost on umbriel seat path */
     {0},
 };
 
@@ -156,14 +156,15 @@ flick_send_key(struct kbd *kb, uint32_t time, uint8_t sc)
 {
     if (sc & SH) {
         uint32_t c = sc & ~SH;
-        zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_LEFTSHIFT,
-                                    WL_KEYBOARD_KEY_STATE_PRESSED);
+        /* wl_keyboard modifiers event carries the shift; the keycode alone
+         * got lost between umbriel's physical/virtual keyboard fold and
+         * mozc (user got ・ and １ instead of ? and !) */
+        zwp_virtual_keyboard_v1_modifiers(kb->vkbd, 1 /* Shift */, 0, 0, 0);
         zwp_virtual_keyboard_v1_key(kb->vkbd, time, c,
                                     WL_KEYBOARD_KEY_STATE_PRESSED);
         zwp_virtual_keyboard_v1_key(kb->vkbd, time, c,
                                     WL_KEYBOARD_KEY_STATE_RELEASED);
-        zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_LEFTSHIFT,
-                                    WL_KEYBOARD_KEY_STATE_RELEASED);
+        zwp_virtual_keyboard_v1_modifiers(kb->vkbd, 0, 0, 0, 0);
     } else {
         zwp_virtual_keyboard_v1_key(kb->vkbd, time, sc,
                                     WL_KEYBOARD_KEY_STATE_PRESSED);
