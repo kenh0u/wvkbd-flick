@@ -64,6 +64,9 @@ static uint32_t layer = ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY;
 /* RIGHT-only: a fixed width anchored on both edges gets centered */
 static uint32_t anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
                          ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+/* --top set: user picked the anchor explicitly, the ally auto-anchor in
+ * create_output_and_surface() must not override it back to the bottom */
+static bool anchor_user_specified = false;
 
 /* application state */
 static bool run_display = true;
@@ -848,27 +851,18 @@ show()
         layer_shell, draw_surf.surf, current_output_data, layer, namespace);
 
     /* ally: fixed width, anchored RIGHT+BOTTOM (both-side anchoring with a
-     * fixed width would center the surface); margins flush (0) */
-    if (dock_mode == DOCK_FULL && custom_width <= 0) {
+     * fixed width would center the surface); margins flush (0).
+     * --top already picked an anchor: leave it alone. */
+    if (!anchor_user_specified && dock_mode == DOCK_FULL && custom_width <= 0) {
         anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
                  ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
         zwlr_layer_surface_v1_set_size(layer_surface, keyboard.w, height);
         zwlr_layer_surface_v1_set_margin(layer_surface, 0, 0, 0, 0);
-    } else {
-        anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
-        uint32_t req_w = 0;
-        if (dock_mode == DOCK_LEFT) {
-            anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT;
-            req_w = keyboard.w;
-        } else if (dock_mode == DOCK_RIGHT) {
-            anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-            req_w = keyboard.w;
-        } else {
-            anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
-                      ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-            req_w = 0;
-        }
-        zwlr_layer_surface_v1_set_size(layer_surface, req_w, height);
+    }
+    if (anchor_user_specified) {
+        /* --top: fixed width on the RIGHT edge, flush margins */
+        zwlr_layer_surface_v1_set_size(layer_surface, keyboard.w, height);
+        zwlr_layer_surface_v1_set_margin(layer_surface, 0, 0, 0, 0);
     }
     zwlr_layer_surface_v1_set_anchor(layer_surface, anchor);
     if (keyboard.exclusive) {
@@ -1131,6 +1125,7 @@ main(int argc, char **argv)
         } else if ((!strcmp(argv[i], "--top")) || (!strcmp(argv[i], "-top"))) {
             anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
                      ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+            anchor_user_specified = true;
         } else if ((!strcmp(argv[i], "-hidden")) ||
                    (!strcmp(argv[i], "--hidden"))) {
             hidden = true;
