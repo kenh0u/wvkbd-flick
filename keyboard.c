@@ -67,7 +67,7 @@ struct punct_entry {
     uint32_t cps[5]; /* C L U R D, 0 = none */
 };
 static const struct punct_entry kana_punct_table[] = {
-    { "、", {0x3001, 0x3002, 0xFF1F, 0, 0xFF01} }, /* C、 L。 U？ R- D！ */
+    { "、", {KEY_COMMA, KEY_DOT, 0xFF1F, 0, 0xFF01} }, /* C, L. U？ R- D！ */
     {0},
 };
 
@@ -223,10 +223,12 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
             continue;
         uint32_t cp = p->cps[dir];
         if (kb->debug)
-            fprintf(stderr, "flick: glyph='%s' dir=%d -> unicode %04x\n",
+            fprintf(stderr, "flick: glyph='%s' dir=%d -> %04x\n",
                     k->label, dir, cp);
-        if (cp)
+        if (cp >= 0x100)
             flick_send_unicode(kb, time, cp);
+        else if (cp)
+            flick_send_key(kb, time, (uint8_t)cp);
         if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall)
             kbd_switch_layout(kb, &kb->layouts[KanaFlick],
                               kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
