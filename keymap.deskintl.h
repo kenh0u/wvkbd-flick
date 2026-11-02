@@ -1456,8 +1456,8 @@ xkb_symbols \"(unnamed)\" {\
         key <I245>               {	[   XF86Bluetooth ] };\
         key <I246>               {	[        XF86WLAN ] };\
         key <I247>               {	[         XF86UWB ] };\
-        key <I250>               {	[       kana_comma ] };\
-        key <I251>               {	[    kana_fullstop ] };\
+        key <I250>               {	[            comma ] };\
+        key <I251>               {	[           period ] };\
         key <I252>               {	[         question ] };\
         key <I253>               {	[           exclam ] };\
         key <I254>               {	[        XF86WWAN ] };\
@@ -2924,8 +2924,8 @@ xkb_symbols \"(unnamed)\" {\
         key <I245>               {	[   XF86Bluetooth ] };\
         key <I246>               {	[        XF86WLAN ] };\
         key <I247>               {	[         XF86UWB ] };\
-        key <I250>               {	[       kana_comma ] };\
-        key <I251>               {	[    kana_fullstop ] };\
+        key <I250>               {	[            comma ] };\
+        key <I251>               {	[           period ] };\
         key <I252>               {	[         question ] };\
         key <I253>               {	[           exclam ] };\
         key <I254>               {	[        XF86WWAN ] };\

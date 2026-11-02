@@ -47,6 +47,8 @@ enum key_type {
 	//          layout switches unsafe for the up handler).
 	// KanaOff: (flick layers) send KEY_MUHENKAN (IME off) and switch to Full
 	//          on unpress.
+	// KanaAnchor: return-to-main-face key (label あいう): always goes back
+	//          to KanaFlick on press, no toggling.
 	// KanaNoop: drawn key, no action (phase-1 placeholders).
 	// KanaHide: inactive slot on a one-shot modifier layer. Drawn with
 	//          scheme 2 (bg-colored) and an empty label, so it reads as a
@@ -61,6 +63,7 @@ enum key_type {
 	KanaOff,
 	KanaNoop,
 	KanaHide,
+	KanaAnchor,
 };
 
 /* Modifiers passed to the virtual_keyboard protocol. They are based on

@@ -53,9 +53,10 @@ static const struct flick_entry kana_flick_table[] = {
     { "や", { {KEY_Y, KEY_A}, {END}, {KEY_Y, KEY_U}, {END}, {KEY_Y, KEY_O} } },
     { "ら", { {KEY_R, KEY_A}, {KEY_R, KEY_I}, {KEY_R, KEY_U}, {KEY_R, KEY_E}, {KEY_R, KEY_O} } },
     { "わ", { {KEY_W, KEY_A}, {KEY_W, KEY_O}, {KEY_N, KEY_N}, {KEY_MINUS}, {END} } },
-    /* punctuation cell: 、。？！ as dedicated XKB keysyms (I250-I253 /
-     * evdev 242-245). The old SH+SLASH / SH+1 wraps lost the shift on the
-     * way to the compositor (user saw ・ and １ instead of ? and !). */
+    /* punctuation cell: plain ASCII , . ? ! (evdev 242-245, dedicated XKB
+     * keys). fcitx5-mozc's romaji map turns , . into 、。 and passes
+     * ? ! straight through; the old SH+SLASH / SH+1 wraps lost the shift
+     * on the way to the compositor (user saw ・ and １). */
     { "、", { {242}, {243}, {244}, {245}, {245} } },
     {0},
 };
@@ -723,6 +724,11 @@ kbd_press_key(struct kbd *kb, struct key *k, uint32_t time)
     }
 
     switch (k->type) {
+    case KanaAnchor:
+        /* the あいう cell: leave any one-shot layer, back to the plain face */
+        kbd_switch_layout(kb, &kb->layouts[KanaFlick],
+                          kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
+        break;
     case KanaNoop:
     case KanaHide:
         /* phase-1 placeholder / hidden slot: drawn only, reacts to nothing */
