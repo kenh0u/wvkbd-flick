@@ -376,7 +376,7 @@ static struct key keys_kana_dakuten[] = {
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
   {"ABC", "", 1.0, KanaNoop, .scheme = 1},
   {"だ", "", 1.0, KanaGlyMut, .scheme = 0},
-  {"な", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"", "", 1.0, KanaHide, .scheme = 2},
   {"ば", "", 1.0, KanaGlyMut, .scheme = 0},
   {"空白", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
@@ -391,7 +391,7 @@ static struct key keys_kana_dakuten[] = {
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
   {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
-  {"゛", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
+  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
@@ -466,7 +466,7 @@ static struct key keys_kana_small[] = {
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
-  {"小", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
+  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
   {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"ゎ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
