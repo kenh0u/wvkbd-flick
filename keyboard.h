@@ -48,6 +48,9 @@ enum key_type {
 	// KanaOff: (flick layers) send KEY_MUHENKAN (IME off) and switch to Full
 	//          on unpress.
 	// KanaNoop: drawn key, no action (phase-1 placeholders).
+	// KanaHide: inactive slot on a one-shot modifier layer. Drawn with
+	//          scheme 2 (bg-colored) and an empty label, so it reads as a
+	//          hole in the grid; presses land on it but do nothing.
 	KanaGly,
 	KanaGlyMut,
 	KanaGlyPlain,
@@ -57,6 +60,7 @@ enum key_type {
 	KanaOn,
 	KanaOff,
 	KanaNoop,
+	KanaHide,
 };
 
 /* Modifiers passed to the virtual_keyboard protocol. They are based on

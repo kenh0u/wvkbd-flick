@@ -450,7 +450,7 @@ kbd_get_key(struct kbd *kb, uint32_t x, uint32_t y)
     if (kb->debug)
         fprintf(stderr, "get key: +%d+%d\n", x, y);
     while (k->type != Last) {
-        if ((k->type != EndRow) && (k->type != Pad) && (k->type != Pad) &&
+        if ((k->type != EndRow) && (k->type != Pad) && (k->type != KanaHide) &&
             (x >= k->x) && (y >= k->y) && (x < k->x + k->w) &&
             (y < k->y + k->h)) {
             return k;
@@ -694,7 +694,8 @@ kbd_press_key(struct kbd *kb, struct key *k, uint32_t time)
 
     switch (k->type) {
     case KanaNoop:
-        /* phase-1 placeholder: drawn only, reacts to nothing */
+    case KanaHide:
+        /* phase-1 placeholder / hidden slot: drawn only, reacts to nothing */
         kb->last_swipe = kb->last_press = k;
         kbd_draw_key(kb, k, Press);
         break;

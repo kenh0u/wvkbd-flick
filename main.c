@@ -1235,6 +1235,11 @@ main(int argc, char **argv)
         keyboard.schemes[0].bg.bgra[3] = bg_alpha;
         keyboard.schemes[1].bg.bgra[3] = bg_alpha;
     }
+    if (alpha_defined) {
+        keyboard.schemes[2].bg.bgra[3] = alpha;
+        keyboard.schemes[2].fg.bgra[3] = alpha;
+        keyboard.schemes[2].high.bgra[3] = alpha;
+    }
 
     if (fc_font_pattern) {
         for (i = 0; i < countof(schemes); i++)

@@ -29,6 +29,17 @@ struct clr_scheme schemes[] = {
   .text = {.color = UINT32_MAX},
   .font = DEFAULT_FONT,
   .rounding = DEFAULT_ROUNDING,
+},
+/* scheme 2: KanaHide -- invisible key on one-shot modifier layers. Same
+ * colors as the keyboard background so the cell reads as a hole. */
+{
+  .bg = {.bgra = {15, 15, 15, transparency}},
+  .fg = {.bgra = {15, 15, 15, transparency}},
+  .high = {.bgra = {15, 15, 15, transparency}},
+  .swipe = {.bgra = {15, 15, 15, 0}},
+  .text = {.color = 0},
+  .font = DEFAULT_FONT,
+  .rounding = DEFAULT_ROUNDING,
 }
 };
 
