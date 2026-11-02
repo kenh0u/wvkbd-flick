@@ -76,7 +76,7 @@ static const struct punct_entry kana_punct_table[] = {
  * (column-head が ざ だ ば, full 5 directions like their plain parents);
  * everything else is KanaGlyPlain and falls through to the plain table. */
 static const struct flick_entry kana_dakuten_table[] = {
-    { "ゔ", { {KEY_V, KEY_U}, {KEY_V, KEY_I}, {KEY_V, KEY_U}, {KEY_V, KEY_E}, {KEY_V, KEY_O} } },
+    { "ゔ", { {KEY_V, KEY_A}, {KEY_V, KEY_I}, {KEY_V, KEY_U}, {KEY_V, KEY_E}, {KEY_V, KEY_O} } },
     { "が", { {KEY_G, KEY_A}, {KEY_G, KEY_I}, {KEY_G, KEY_U}, {KEY_G, KEY_E}, {KEY_G, KEY_O} } },
     { "ざ", { {KEY_Z, KEY_A}, {KEY_Z, KEY_I}, {KEY_Z, KEY_U}, {KEY_Z, KEY_E}, {KEY_Z, KEY_O} } },
     { "だ", { {KEY_D, KEY_A}, {KEY_D, KEY_I}, {KEY_D, KEY_U}, {KEY_D, KEY_E}, {KEY_D, KEY_O} } },
@@ -230,9 +230,12 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
             flick_send_unicode(kb, time, cp);
         else if (cp)
             flick_send_key(kb, time, (uint8_t)cp);
-        if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall)
+        if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall) {
             kbd_switch_layout(kb, &kb->layouts[KanaFlick],
                               kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
+        } else {
+            kbd_draw_key(kb, k, Unpress);
+        }
         return;
     }
     const uint8_t *seq = flick_lookup(cur, k->label, dir, k->type == KanaGlySmall);
@@ -250,9 +253,14 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
     if (seq)
         flick_send_seq(kb, time, seq);
     /* one-shot consumed: fall back to the plain flick layer */
-    if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall)
+    if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall) {
         kbd_switch_layout(kb, &kb->layouts[KanaFlick],
                           kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
+    } else {
+        /* un-highlight: without this the key keeps the swipe color and
+         * reads as "still pressed" (user report) */
+        kbd_draw_key(kb, k, Unpress);
+    }
 }
 
 /* ------------------------------------------------------------------------- */
