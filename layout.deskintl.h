@@ -321,12 +321,12 @@ static struct key keys_special[] = {
 #define KANA_FLICK_ROWS(...) ((const char *[5]){__VA_ARGS__})
 
 static struct key keys_kana_flick[] = {
-  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"⇥", "", 1.0, Code, KEY_TAB, .scheme = 1},
   {"数", "", 1.0, KanaNoop, .scheme = 1},
   {"あ", "", 1.0, KanaGly, .scheme = 0},
   {"か", "", 1.0, KanaGly, .scheme = 0},
   {"さ", "", 1.0, KanaGly, .scheme = 0},
-  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
@@ -337,20 +337,21 @@ static struct key keys_kana_flick[] = {
   {"空", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"←→", "", 1.0, KanaNoop, .scheme = 1},
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
   {"あ", "", 1.0, KanaNoop, .scheme = 0},
   {"ま", "", 1.0, KanaGly, .scheme = 0},
   {"や", "", 1.0, KanaGly, .scheme = 0},
   {"ら", "", 1.0, KanaGly, .scheme = 0},
-  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
   {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
   {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"わ", "", 1.0, KanaGly, .scheme = 0},
   {"、", "", 1.0, KanaGly, .scheme = 0},
-  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+
   /* end of layout */
   {"", "", 0.0, Last},
 };
@@ -364,12 +365,12 @@ static struct key keys_kana_flick[] = {
  * through a one-shot layer works like the plain layer with just one head
  * changed. Modifier cells (゛゜小) return/cross-switch at press. */
 static struct key keys_kana_dakuten[] = {
-  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"⇥", "", 1.0, Code, KEY_TAB, .scheme = 1},
   {"数", "", 1.0, KanaNoop, .scheme = 1},
   {"ゔ", "", 1.0, KanaGlyMut, .scheme = 0},
   {"が", "", 1.0, KanaGlyMut, .scheme = 0},
   {"ざ", "", 1.0, KanaGlyMut, .scheme = 0},
-  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
@@ -380,32 +381,33 @@ static struct key keys_kana_dakuten[] = {
   {"空", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"←→", "", 1.0, KanaNoop, .scheme = 1},
-  {"", "", 1.0, Pad, .scheme = 1},
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"あ", "", 1.0, KanaNoop, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
-  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
   {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
   {"゛", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+
   /* end of layout */
   {"", "", 0.0, Last},
 };
 
 /* handakuten (゜): only the は column voices (ぱ row head); plain elsewhere */
 static struct key keys_kana_handakuten[] = {
-  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"⇥", "", 1.0, Code, KEY_TAB, .scheme = 1},
   {"数", "", 1.0, KanaNoop, .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
-  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
@@ -416,20 +418,21 @@ static struct key keys_kana_handakuten[] = {
   {"空", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"←→", "", 1.0, KanaNoop, .scheme = 1},
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
-  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
   {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
   {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+
   /* end of layout */
   {"", "", 0.0, Last},
 };
@@ -438,12 +441,12 @@ static struct key keys_kana_handakuten[] = {
  * column, ゎ on the わ cell. R flicks (i/u/e/o) produce the small vowel/ya
  * variants via the kana_small_table. */
 static struct key keys_kana_small[] = {
-  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"⇥", "", 1.0, Code, KEY_TAB, .scheme = 1},
   {"数", "", 1.0, KanaNoop, .scheme = 1},
   {"ぁ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
-  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
@@ -454,20 +457,21 @@ static struct key keys_kana_small[] = {
   {"空", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"←→", "", 1.0, KanaNoop, .scheme = 1},
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"ゃ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
-  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
   {"小", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
   {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"ゎ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+
   /* end of layout */
   {"", "", 0.0, Last},
 };

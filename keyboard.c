@@ -53,7 +53,10 @@ static const struct flick_entry kana_flick_table[] = {
     { "や", { {KEY_Y, KEY_A}, {END}, {KEY_Y, KEY_U}, {END}, {KEY_Y, KEY_O} } },
     { "ら", { {KEY_R, KEY_A}, {KEY_R, KEY_I}, {KEY_R, KEY_U}, {KEY_R, KEY_E}, {KEY_R, KEY_O} } },
     { "わ", { {KEY_W, KEY_A}, {KEY_W, KEY_O}, {KEY_N, KEY_N}, {KEY_MINUS}, {END} } },
-    { "、", { {KEY_COMMA}, {KEY_DOT}, {SH, KEY_SLASH}, {SH, KEY_1}, {END} } },
+    /* punctuation cell: 、。？！ as dedicated XKB keysyms (I250-I253 /
+     * evdev 242-245). The old SH+SLASH / SH+1 wraps lost the shift on the
+     * way to the compositor (user saw ・ and １ instead of ? and !). */
+    { "、", { {242}, {243}, {244}, {245}, {245} } },
     {0},
 };
 
@@ -428,6 +431,33 @@ kbd_init_layout(struct layout *l, uint32_t width, uint32_t height)
         }
         k->h = l->keyheight;
         k++;
+    }
+
+    /* kana flick faces: the (2,5) Enter merges the last two rows of the
+     * right column (the (3,5) slot is a Pad underneath it). Detect the
+     * pattern post-layout: if the key directly below the last row's last
+     * cell is a Pad, extend the Enter key's height over it. */
+    k = l->keys;
+    struct key *k_last = NULL;    /* last key of row 2 */
+    struct key *k_below = NULL;   /* the Pad under it */
+    uint32_t row2_y = 2 * l->keyheight;
+    while (k->type != Last) {
+        if ((k->type != EndRow) && (k->width > 0)) {
+            if (k->y == row2_y) {
+                k_last = k;
+            } else if (k_last && k->y == row2_y + l->keyheight &&
+                       k->x == k_last->x) {
+                k_below = k;
+                break;
+            }
+        }
+        k++;
+    }
+    /* the Pad under the Enter is invisible and receives no events, so
+     * extending the Enter over it only changes rendering */
+    if (k_last && k_below && k_below->type == Pad &&
+        k_last->type == Code && k_last->code == KEY_ENTER) {
+        k_last->h = l->keyheight * 2;
     }
 }
 
