@@ -189,7 +189,7 @@ static struct key keys_full[] = {
   {"p", "P", 1.0, Code, KEY_P},
   {"", "", 0.0, EndRow},
 
-  {"Ctr", "Ctr", 2.5, Mod, Ctrl, .scheme = 1},
+  {"Control", "Control", 2.5, Mod, Ctrl, .scheme = 1},
   {"a", "A", 1.0, Code, KEY_A},
   {"s", "S", 1.0, Code, KEY_S},
   {"d", "D", 1.0, Code, KEY_D},
@@ -217,10 +217,10 @@ static struct key keys_full[] = {
   {"", "", 0.0, EndRow},
 
   {"Alt", "Alt", 1.0, Mod, Alt, .scheme = 1},
-  {"Sup", "Sup", 2.0, Mod, Super, .scheme = 1},
-  {"無", "無", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
+  {"Super", "Super", 2.0, Mod, Super, .scheme = 1},
+  {"英数", "英数", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
   {"", "", 3.0, Code, KEY_SPACE},
-  {"漢", "漢", 2.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"かな", "かな", 2.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
   {"Enter", "Enter", 2.0, Code, KEY_ENTER, .scheme = 1},
   /* end of layout */
   {"", "", 0.0, Last},
@@ -259,7 +259,7 @@ static struct key keys_special[] = {
   {"\\", "|", 1.0, Code, KEY_BACKSLASH, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"Ctr", "Ctr", 2.5, Mod, Ctrl, .scheme = 1},
+  {"Control", "Control", 2.5, Mod, Ctrl, .scheme = 1},
   {"a", "A", 1.0, Code, KEY_A},
   {"s", "S", 1.0, Code, KEY_S},
   {"d", "D", 1.0, Code, KEY_D},
@@ -285,10 +285,10 @@ static struct key keys_special[] = {
   {"", "", 0.0, EndRow},
 
   {"Alt", "Alt", 1.0, Mod, Alt, .scheme = 1},
-  {"Sup", "Sup", 2.0, Mod, Super, .scheme = 1},
-  {"無", "無", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
+  {"Super", "Super", 2.0, Mod, Super, .scheme = 1},
+  {"英数", "英数", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
   {"", "", 3.0, Code, KEY_SPACE},
-  {"漢", "漢", 2.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"かな", "かな", 2.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
   {"Enter", "Enter", 2.0, Code, KEY_ENTER, .scheme = 1},
   /* end of layout */
   {"", "", 0.0, Last},
@@ -349,7 +349,7 @@ static struct key keys_kana_flick[] = {
   {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
   {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"わ", "", 1.0, KanaGly, .scheme = 0},
-  {"、", "", 1.0, KanaGly, .scheme = 0},
+  {"、。!?", "", 1.0, KanaGly, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
 
   /* end of layout */
@@ -490,7 +490,7 @@ static struct key keys_cyrillic[] = {
   {"з", "З", 1.0, Code, KEY_P},
   {"", "", 0.0, EndRow},
 
-  {"Ctr", "Ctr", 2.5, Mod, Ctrl, .scheme = 1},
+  {"Control", "Control", 2.5, Mod, Ctrl, .scheme = 1},
   {"ф", "Ф", 1.0, Code, KEY_A},
   {"ы", "Ы", 1.0, Code, KEY_S},
   {"в", "В", 1.0, Code, KEY_D},
@@ -516,10 +516,10 @@ static struct key keys_cyrillic[] = {
   {"", "", 0.0, EndRow},
 
   {"Alt", "Alt", 1.0, Mod, Alt, .scheme = 1},
-  {"Sup", "Sup", 2.0, Mod, Super, .scheme = 1},
-  {"無", "無", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
+  {"Super", "Super", 2.0, Mod, Super, .scheme = 1},
+  {"英数", "英数", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
   {"", "", 3.0, Code, KEY_SPACE},
-  {"漢", "漢", 2.0, Code, KEY_HIRAGANA, .scheme = 1},
+  {"かな", "かな", 2.0, Code, KEY_HIRAGANA, .scheme = 1},
   {"Enter", "Enter", 2.0, Code, KEY_ENTER, .scheme = 1},
   /* end of layout */
   {"", "", 0.0, Last},
@@ -1023,7 +1023,7 @@ static struct key keys_compose_bracket[] = {
   {"", "", 3.5, Pad},
   {"", "", 0.0, EndRow},
   {"Abc", "Abc", 1.0, BackLayer, .scheme = 1},
-  {"Ctr", "Ctr", 1.0, Mod, Ctrl, .scheme = 1},
+  {"Control", "Control", 1.0, Mod, Ctrl, .scheme = 1},
   {"", "", 8, Pad},
   {"", "", 0.0, Last},
 };
