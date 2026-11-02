@@ -196,8 +196,6 @@ flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
                                 WL_KEYBOARD_KEY_STATE_PRESSED);
     zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127,
                                 WL_KEYBOARD_KEY_STATE_RELEASED);
-    /* restore the layout's regular keymap so normal keys keep working */
-    create_and_upload_keymap(kb, kb->layout->keymap_name, 0);
 }
 
 /* current layout id (kb->layout is a pointer into kb->layouts) */
