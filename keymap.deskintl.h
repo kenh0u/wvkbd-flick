@@ -1344,6 +1344,7 @@ xkb_symbols \"(unnamed)\" {\
         key <POWR>               {	[    XF86PowerOff ] };\
         key <KPEQ>               {	[        KP_Equal ] };\
         key <I126>               {	[       plusminus ] };\
+        key <AB11>               {	[   bracketright ] };\
         key <PAUS>               {\
                 type= \"PC_CONTROL_LEVEL2\",\
                 symbols[Group1]= [           Pause,           Break ]\
@@ -2807,6 +2808,7 @@ xkb_symbols \"(unnamed)\" {\
         key <POWR>               {	[    XF86PowerOff ] };\
         key <KPEQ>               {	[        KP_Equal ] };\
         key <I126>               {	[       plusminus ] };\
+        key <AB11>               {	[   bracketright ] };\
         key <PAUS>               {\
                 type= \"PC_CONTROL_LEVEL2\",\
                 symbols[Group1]= [           Pause,           Break ]\

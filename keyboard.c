@@ -2,6 +2,7 @@
 #include <linux/input-event-codes.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <sys/mman.h>
 #include <ctype.h>
 #include <time.h>
@@ -12,6 +13,199 @@
 #include "os-compatibility.h"
 
 #define MAX_LAYERS 25
+
+/* ---------------------------------------------------------------------------
+ * Kana flick engine (see keyboard.h for the key types).
+ * ------------------------------------------------------------------------- */
+
+/* flick direction */
+enum flick_dir { FLICK_C = 0, FLICK_L, FLICK_U, FLICK_R, FLICK_D };
+
+/* Minimum travel (surface px) for a touch to count as a flick. Below it the
+ * touch is a plain tap (center). A key is ~90px wide on this build; a flick
+ * should be intentional travel, not fat-finger jitter. */
+#define FLICK_MIN_DIST 30
+
+/* (glyph)[dir] -> evdev scancodes, 0-terminated. MSB (0x80) set = wrap that
+ * key in Shift press/release. At most 3 keys + terminator. */
+struct flick_entry {
+    const char *glyph;
+    uint8_t dirs[5][4]; /* C L U R D */
+};
+
+#define SH 0x80
+#define END 0
+
+#define K(g, c, l, u, r, d)                                                    \
+    { .glyph = g, .dirs = {{c}, {l}, {u}, {r}, {d}} }
+
+/* plain kana 12-key (JIS flip layout) */
+static const struct flick_entry kana_flick_table[] = {
+    /* a-row keeps its xN romaji: mozc maps those through even when the
+     * parser would not produce a distinct small kana otherwise */
+    { "あ", { {KEY_A}, {KEY_I}, {KEY_U}, {KEY_E}, {KEY_O} } },
+    { "か", { {KEY_K, KEY_A}, {KEY_K, KEY_I}, {KEY_K, KEY_U}, {KEY_K, KEY_E}, {KEY_K, KEY_O} } },
+    { "さ", { {KEY_S, KEY_A}, {KEY_S, KEY_I}, {KEY_S, KEY_U}, {KEY_S, KEY_E}, {KEY_S, KEY_O} } },
+    { "た", { {KEY_T, KEY_A}, {KEY_T, KEY_I}, {KEY_T, KEY_U}, {KEY_T, KEY_E}, {KEY_T, KEY_O} } },
+    { "な", { {KEY_N, KEY_A}, {KEY_N, KEY_I}, {KEY_N, KEY_U}, {KEY_N, KEY_E}, {KEY_N, KEY_O} } },
+    { "は", { {KEY_H, KEY_A}, {KEY_H, KEY_I}, {KEY_H, KEY_U}, {KEY_H, KEY_E}, {KEY_H, KEY_O} } },
+    { "ま", { {KEY_M, KEY_A}, {KEY_M, KEY_I}, {KEY_M, KEY_U}, {KEY_M, KEY_E}, {KEY_M, KEY_O} } },
+    { "や", { {KEY_Y, KEY_A}, {END}, {KEY_Y, KEY_U}, {END}, {KEY_Y, KEY_O} } },
+    { "ら", { {KEY_R, KEY_A}, {KEY_R, KEY_I}, {KEY_R, KEY_U}, {KEY_R, KEY_E}, {KEY_R, KEY_O} } },
+    { "わ", { {KEY_W, KEY_A}, {KEY_W, KEY_O}, {KEY_N, KEY_N}, {KEY_MINUS}, {END} } },
+    { "、", { {KEY_COMMA}, {KEY_DOT}, {SH, KEY_SLASH}, {SH, KEY_1}, {END} } },
+    {0},
+};
+
+/* dakuten (゛) one-shot layer. The grid mirrors the plain flick layer
+ * cell-for-cell: only cells WITH a voiced form carry the modified glyph
+ * (column-head が ざ だ ば, full 5 directions like their plain parents);
+ * everything else is KanaGlyPlain and falls through to the plain table. */
+static const struct flick_entry kana_dakuten_table[] = {
+    { "ゔ", { {KEY_V, KEY_U}, {KEY_V, KEY_I}, {KEY_V, KEY_U}, {KEY_V, KEY_E}, {KEY_V, KEY_O} } },
+    { "が", { {KEY_G, KEY_A}, {KEY_G, KEY_I}, {KEY_G, KEY_U}, {KEY_G, KEY_E}, {KEY_G, KEY_O} } },
+    { "ざ", { {KEY_Z, KEY_A}, {KEY_Z, KEY_I}, {KEY_Z, KEY_U}, {KEY_Z, KEY_E}, {KEY_Z, KEY_O} } },
+    { "だ", { {KEY_D, KEY_A}, {KEY_D, KEY_I}, {KEY_D, KEY_U}, {KEY_D, KEY_E}, {KEY_D, KEY_O} } },
+    { "ば", { {KEY_B, KEY_A}, {KEY_B, KEY_I}, {KEY_B, KEY_U}, {KEY_B, KEY_E}, {KEY_B, KEY_O} } },
+    {0},
+};
+
+/* handakuten (゜) one-shot layer: only the は-row voices; same mirrored grid */
+static const struct flick_entry kana_handakuten_table[] = {
+    { "ぱ", { {KEY_P, KEY_A}, {KEY_P, KEY_I}, {KEY_P, KEY_U}, {KEY_P, KEY_E}, {KEY_P, KEY_O} } },
+    {0},
+};
+
+/* small-kana (小) one-shot layer: same grid, the small glyph replaces each
+ * column head; flicks produce the small column (small a-row, っ, ゃゅょ, ゎ) */
+static const struct flick_entry kana_small_table[] = {
+    { "ぁ", { {KEY_X, KEY_A}, {KEY_X, KEY_I}, {KEY_X, KEY_U}, {KEY_X, KEY_E}, {KEY_X, KEY_O} } },
+    { "っ", { {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U} } },
+    { "ゃ", { {KEY_X, KEY_Y, KEY_A}, {END}, {KEY_X, KEY_Y, KEY_U}, {END}, {KEY_X, KEY_Y, KEY_O} } },
+    { "ゎ", { {KEY_X, KEY_W, KEY_A}, {END}, {END}, {END}, {END} } },
+    {0},
+};
+
+static const struct flick_entry *
+table_find(const struct flick_entry *t, const char *glyph)
+{
+    for (; t->glyph; t++) {
+        if (strcmp(t->glyph, glyph) == 0)
+            return t;
+    }
+    return NULL;
+}
+
+/* Resolve (layout, label, direction) to a scancode sequence. Falls back to
+ * the plain-flick table when the current one-shot layer has no modified form
+ * for this glyph (that is how KanaGlyPlain/KanaGlyMut behave). */
+static const uint8_t *
+flick_lookup(enum layout_id cur, const char *glyph, enum flick_dir dir,
+             bool plain_glyph_lookup)
+{
+    const struct flick_entry *t = kana_flick_table;
+    const struct flick_entry *e;
+    if (cur == KanaDakuten)
+        t = kana_dakuten_table;
+    else if (cur == KanaHandakuten)
+        t = kana_handakuten_table;
+    else if (cur == KanaSmall)
+        t = kana_small_table;
+    /* One-shot modifier (dakuten/handakuten/small) layers mirror the plain
+     * grid: KanaGlyMut/KanaGlySmall carry the modified column head, but the
+     * flick LOOKUP is by the plain head the same cell has on KanaFlick, so
+     * both resolve per (cell, direction) identically. */
+    e = table_find(t, glyph);
+    if (e == NULL && t != kana_flick_table)
+        e = table_find(kana_flick_table, glyph);
+    if (e == NULL)
+        return NULL;
+    return e->dirs[dir];
+}
+
+/* direction from the touch vector (signs matter) */
+static enum flick_dir
+kana_flick_dir(int32_t dx, int32_t dy)
+{
+    int32_t adx = dx < 0 ? -dx : dx;
+    int32_t ady = dy < 0 ? -dy : dy;
+    if (adx < FLICK_MIN_DIST && ady < FLICK_MIN_DIST)
+        return FLICK_C;
+    if (adx > ady)
+        return dx > 0 ? FLICK_R : FLICK_L;
+    else
+        return dy > 0 ? FLICK_D : FLICK_U;
+}
+
+static void
+flick_send_key(struct kbd *kb, uint32_t time, uint8_t sc)
+{
+    if (sc & SH) {
+        uint32_t c = sc & ~SH;
+        zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_LEFTSHIFT,
+                                    WL_KEYBOARD_KEY_STATE_PRESSED);
+        zwp_virtual_keyboard_v1_key(kb->vkbd, time, c,
+                                    WL_KEYBOARD_KEY_STATE_PRESSED);
+        zwp_virtual_keyboard_v1_key(kb->vkbd, time, c,
+                                    WL_KEYBOARD_KEY_STATE_RELEASED);
+        zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_LEFTSHIFT,
+                                    WL_KEYBOARD_KEY_STATE_RELEASED);
+    } else {
+        zwp_virtual_keyboard_v1_key(kb->vkbd, time, sc,
+                                    WL_KEYBOARD_KEY_STATE_PRESSED);
+        zwp_virtual_keyboard_v1_key(kb->vkbd, time, sc,
+                                    WL_KEYBOARD_KEY_STATE_RELEASED);
+    }
+}
+
+/* play a 0-terminated scancode sequence */
+static void
+flick_send_seq(struct kbd *kb, uint32_t time, const uint8_t *seq)
+{
+    for (; *seq; seq++)
+        flick_send_key(kb, time, *seq);
+}
+
+/* current layout id (kb->layout is a pointer into kb->layouts) */
+static enum layout_id
+kana_layout_id(struct kbd *kb)
+{
+    for (size_t i = 0; i < NumLayouts; i++) {
+        if (kb->layout == &kb->layouts[i])
+            return i;
+    }
+    return Full;
+}
+
+/* Emit the flick result for a released kana key and handle the one-shot
+ * fallback to the plain layer. Called at unpress with the touch vector. */
+void
+kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
+               uint32_t time)
+{
+    enum flick_dir dir = kana_flick_dir(dx, dy);
+    enum layout_id cur = kana_layout_id(kb);
+    const uint8_t *seq = flick_lookup(cur, k->label, dir, k->type == KanaGlySmall);
+    if (kb->debug) {
+        fprintf(stderr, "flick: glyph='%s' dx=%d dy=%d dir=%d -> seq",
+                k->label, dx, dy, dir);
+        if (seq) {
+            for (int i = 0; seq[i]; i++)
+                fprintf(stderr, " %03x", seq[i]);
+        } else {
+            fprintf(stderr, " (none)");
+        }
+        fprintf(stderr, "\n");
+    }
+    if (seq)
+        flick_send_seq(kb, time, seq);
+    /* one-shot consumed: fall back to the plain flick layer */
+    if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall)
+        kbd_switch_layout(kb, &kb->layouts[KanaFlick],
+                          kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
+}
+
+/* ------------------------------------------------------------------------- */
 
 /* lazy die macro */
 #define die(...)                                                               \
@@ -306,7 +500,39 @@ kbd_unpress_key(struct kbd *kb, uint32_t time)
         unlatch_super = (kb->mods & Super) == Super;
         unlatch_altgr = (kb->mods & AltGr) == AltGr;
 
-        if (kb->last_press->type == Copy) {
+        if (kb->last_press->type == KanaGly ||
+            kb->last_press->type == KanaGlyMut ||
+            kb->last_press->type == KanaGlyPlain ||
+            kb->last_press->type == KanaGlySmall) {
+            /* kana keys emit nothing on press: at release (here) the touch
+             * vector picks the flick direction and the modifier-layer
+             * one-shot is consumed. No keycode release to send. */
+            struct key *k = kb->last_press;
+            int32_t dx = (int32_t)kb->cur_up_x - (int32_t)kb->cur_down_x;
+            int32_t dy = (int32_t)kb->cur_up_y - (int32_t)kb->cur_down_y;
+            kbd_flick_emit(kb, k, dx, dy, time);
+            kb->last_press = NULL;
+            return;
+        } else if (kb->last_press->type == KanaOn ||
+                   kb->last_press->type == KanaOff) {
+            /* IME toggle + layer switch at unpress: both switch between a
+             * 4-row flick layout and the 5-row QWERTY ones, so switching at
+             * press would re-hit-test the release on a different grid.
+             * KanaOn's KEY_HIRAGANA was already sent by the Code press
+             * path (shared union member); KanaOff sends KEY_MUHENKAN here
+             * (nothing was sent at press). The layer switch itself is
+             * performed by kbd_release_key via kb->kana_pending_switch. */
+            kb->kana_pending_switch = kb->last_press->type;
+            if (kb->last_press->type == KanaOff) {
+                zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_MUHENKAN,
+                                            WL_KEYBOARD_KEY_STATE_PRESSED);
+                zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_MUHENKAN,
+                                            WL_KEYBOARD_KEY_STATE_RELEASED);
+            }
+            kbd_draw_key(kb, kb->last_press, Unpress);
+            kb->last_press = NULL;
+            return;
+        } else if (kb->last_press->type == Copy) {
             if (kb->debug) fprintf(stderr, "release copy key (unlatch_shift=%d, mods=%d)\n", unlatch_shift, kb->mods);
             zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127, // COMP key
                                         WL_KEYBOARD_KEY_STATE_RELEASED);
@@ -370,6 +596,23 @@ void
 kbd_release_key(struct kbd *kb, uint32_t time)
 {
     kbd_unpress_key(kb, time);
+    /* deferred kana layer switch (KanaOn/KanaOff): runs AFTER unpress, when
+     * no key is held, so the release's hit-testing never happens against
+     * the next layout (5-row <-> 4-row). */
+    if (kb->kana_pending_switch) {
+        if (kb->kana_pending_switch == KanaOn) {
+            zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_HIRAGANA,
+                                        WL_KEYBOARD_KEY_STATE_RELEASED);
+            kbd_switch_layout(kb, &kb->layouts[KanaFlick],
+                              kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
+        } else {
+            /* cleanup: KanaOn's press sent KEY_HIRAGANA with no release
+             * (kana keys short-circuit unpress) - release it here */
+            kbd_switch_layout(kb, &kb->layouts[Full],
+                              kbd_get_layer_index(kb, &kb->layouts[Full]));
+        }
+        kb->kana_pending_switch = 0;
+    }
     if (kb->print_intersect && kb->last_swipe) {
         printf("\n");
         // Important so autocompleted words get typed in time
@@ -407,6 +650,18 @@ kbd_motion_key(struct kbd *kb, uint32_t time, uint32_t x, uint32_t y)
             kb->last_swipe = intersect_key;
             kbd_draw_key(kb, kb->last_swipe, Swipe);
         }
+    } else if (kb->last_press &&
+               (kb->last_press->type == KanaGly ||
+                kb->last_press->type == KanaGlyMut ||
+                kb->last_press->type == KanaGlyPlain ||
+                kb->last_press->type == KanaGlySmall)) {
+        /* kana press in progress: keep it held (visual), DO NOT unpress on
+         * motion, or the flick vector is lost; just track the up point so
+         * the release direction can also use the last motion instead of the
+         * raw up coords if a motion arrived after crossing the key edge */
+        kb->cur_up_x = x;
+        kb->cur_up_y = y;
+        kbd_clear_last_popup(kb);
     } else {
         kbd_unpress_key(kb, time);
     }
@@ -438,6 +693,39 @@ kbd_press_key(struct kbd *kb, struct key *k, uint32_t time)
     }
 
     switch (k->type) {
+    case KanaNoop:
+        /* phase-1 placeholder: drawn only, reacts to nothing */
+        kb->last_swipe = kb->last_press = k;
+        kbd_draw_key(kb, k, Press);
+        break;
+    case KanaMod:
+        /* one-shot modifier layer: switch immediately so the labels change
+         * while the finger is still down (visual feedback requirement);
+         * safe because these layers have the SAME 4-row grid. */
+        kbd_switch_layout(kb, k->layout, kbd_get_layer_index(kb, k->layout));
+        break;
+    case KanaCancel:
+        /* second tap on the modifier layer's own glyph (or the cancel
+         * cell): back to the plain flick layer without sending anything */
+        kbd_switch_layout(kb, k->layout, kbd_get_layer_index(kb, k->layout));
+        break;
+    case KanaGly:
+    case KanaGlyMut:
+    case KanaGlyPlain:
+    case KanaGlySmall:
+        /* register only; emission happens at unpress with the vector */
+        kb->last_swipe = kb->last_press = k;
+        kbd_draw_key(kb, k, Press);
+        break;
+    case KanaOn:
+    case KanaOff:
+        /* keycode on press (Code-style), layer switch at unpress */
+        kb->last_swipe = kb->last_press = k;
+        kbd_draw_key(kb, k, Press);
+        if (k->type == KanaOn)
+            zwp_virtual_keyboard_v1_key(kb->vkbd, time, k->code,
+                                        WL_KEYBOARD_KEY_STATE_PRESSED);
+        break;
     case Code:
         if (k->code_mod) {
             zwp_virtual_keyboard_v1_key_mods(kb->vkbd, time, k->code_mod, WL_KEYBOARD_KEY_STATE_PRESSED);
@@ -679,7 +967,7 @@ kbd_draw_key(struct kbd *kb, struct key *k, enum key_draw_type type)
     }
 
 
-    if (kb->show_popup && (type == Press || type == Unpress)) {
+    if (0) { /* popups disabled: flick overlay would cover the fingers' cells */
         kbd_clear_last_popup(kb);
 
         kb->last_popup_x = k->x;

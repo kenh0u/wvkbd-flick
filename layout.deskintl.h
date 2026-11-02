@@ -6,12 +6,16 @@
 #define KBD_PIXEL_LANDSCAPE_HEIGHT 400
 
 /* spacing around each key */
-#define KBD_KEY_BORDER 2
+#define KBD_KEY_BORDER 1
 
 /* layout declarations */
 enum layout_id {
 	Full = 0,
 	Special,
+	KanaFlick,
+	KanaDakuten,
+	KanaHandakuten,
+	KanaSmall,
 	Cyrillic,
 	ComposeA,
 	ComposeE,
@@ -55,7 +59,9 @@ enum layout_id {
 	NumLayouts,
 };
 
-static struct key keys_full[], keys_special[], keys_cyrillic[],
+static struct key keys_full[], keys_special[], keys_kana_flick[],
+  keys_kana_dakuten[], keys_kana_handakuten[], keys_kana_small[],
+  keys_cyrillic[],
   keys_compose_a[],
   keys_compose_e[], keys_compose_y[], keys_compose_u[], keys_compose_i[],
   keys_compose_o[], keys_compose_w[], keys_compose_r[], keys_compose_t[],
@@ -74,6 +80,15 @@ static struct layout layouts[NumLayouts] = {
                                          // third parameter is the layout name
 										 // last parameter indicates if it's an alphabetical/primary layout
   [Special] = {keys_special, "latin", "special", false},
+  // Japanese flick layers: kana_glyph keys drive the flick engine in
+  // keyboard.c (5-way vector from the touch, romaji sent through the IME
+  // buffer). Modifier layers (dakuten/handakuten/small) apply their mark to
+  // the next flick and fall back to KanaFlick; all use the latin keymap
+  // because output goes through the romaji codes below, not kana glyphs.
+  [KanaFlick] = {keys_kana_flick, "latin", "kana_flick", true},
+  [KanaDakuten] = {keys_kana_dakuten, "latin", "kana_dakuten", false},
+  [KanaHandakuten] = {keys_kana_handakuten, "latin", "kana_handakuten", false},
+  [KanaSmall] = {keys_kana_small, "latin", "kana_small", false},
   [Cyrillic] = {keys_cyrillic, "cyrillic", "cyrillic", true},
   [ComposeA] = {keys_compose_a, "latin"},
   [ComposeE] = {keys_compose_e, "latin"},
@@ -146,23 +161,6 @@ static struct layout layouts[NumLayouts] = {
  * - layout: layout to switch to when key is pressed
  */
 static struct key keys_full[] = {
-  {"Esc", "Esc", 1.25, Code, KEY_ESC, .scheme = 1},
-  {"F1", "F1", 1.0, Code, KEY_F1, .scheme = 1},
-  {"F2", "F2", 1.0, Code, KEY_F2, .scheme = 1},
-  {"F3", "F3", 1.0, Code, KEY_F3, .scheme = 1},
-  {"F4", "F4", 1.0, Code, KEY_F4, .scheme = 1},
-  {"F5", "F5", 1.0, Code, KEY_F5, .scheme = 1},
-  {"F6", "F6", 1.0, Code, KEY_F6, .scheme = 1},
-  {"F7", "F7", 1.0, Code, KEY_F7, .scheme = 1},
-  {"F8", "F8", 1.0, Code, KEY_F8, .scheme = 1},
-  {"F9", "F9", 1.0, Code, KEY_F9, .scheme = 1},
-  {"F10", "F10", 1.0, Code, KEY_F10, .scheme = 1},
-  {"F11", "F11", 1.0, Code, KEY_F11, .scheme = 1},
-  {"F12", "F12", 1.0, Code, KEY_F12, .scheme = 1},
-  {"Del", "Del", 1.25, Code, KEY_DELETE, .scheme = 1},
-  {"", "", 0.0, EndRow},
-
-  {"`", "~", 1.0, Code, KEY_GRAVE},
   {"1", "!", 1.0, Code, KEY_1},
   {"2", "@", 1.0, Code, KEY_2},
   {"3", "#", 1.0, Code, KEY_3},
@@ -171,200 +169,354 @@ static struct key keys_full[] = {
   {"6", "^", 1.0, Code, KEY_6},
   {"7", "&", 1.0, Code, KEY_7},
   {"8", "*", 1.0, Code, KEY_8},
-  {"9", "(", 1.0, Code, KEY_9, &layouts[ComposeBracket]},
-  {"0", ")", 1.0, Code, KEY_0, &layouts[ComposeBracket]},
-  {"-", "_", 1.0, Code, KEY_MINUS, &layouts[ComposeBracket]},
-  {"=", "+", 1.0, Code, KEY_EQUAL, &layouts[ComposeBracket]},
-  {"⌫", "⌫", 1.5, Code, KEY_BACKSPACE, .scheme = 1},
+  {"9", "(", 1.0, Code, KEY_9},
+  {"0", ")", 1.0, Code, KEY_0},
+  // the number row's right edge is the easiest reach from the Ally grip:
+  // the layer switch lives here
+  {"⌨͕", "⌨͔", 2.0, NextLayer, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"Tab", "Tab", 1.5, Code, KEY_TAB, .scheme = 1},
+  {"Tab", "Tab", 2.0, Code, KEY_TAB, .scheme = 1},
   {"q", "Q", 1.0, Code, KEY_Q},
-  {"w", "W", 1.0, Code, KEY_W, &layouts[ComposeW]},
-  {"e", "E", 1.0, Code, KEY_E, &layouts[ComposeE]},
-  {"r", "R", 1.0, Code, KEY_R, &layouts[ComposeR]},
-  {"t", "T", 1.0, Code, KEY_T, &layouts[ComposeT]},
-  {"y", "Y", 1.0, Code, KEY_Y, &layouts[ComposeY]},
-  {"u", "U", 1.0, Code, KEY_U, &layouts[ComposeU]},
-  {"i", "I", 1.0, Code, KEY_I, &layouts[ComposeI]},
-  {"o", "O", 1.0, Code, KEY_O, &layouts[ComposeO]},
-  {"p", "P", 1.0, Code, KEY_P, &layouts[ComposeP]},
-  {"[", "{", 1.0, Code, KEY_LEFTBRACE},
-  {"]", "}", 1.0, Code, KEY_RIGHTBRACE},
-  {"\\", "|", 1.0, Code, KEY_BACKSLASH},
+  {"w", "W", 1.0, Code, KEY_W},
+  {"e", "E", 1.0, Code, KEY_E},
+  {"r", "R", 1.0, Code, KEY_R},
+  {"t", "T", 1.0, Code, KEY_T},
+  {"y", "Y", 1.0, Code, KEY_Y},
+  {"u", "U", 1.0, Code, KEY_U},
+  {"i", "I", 1.0, Code, KEY_I},
+  {"o", "O", 1.0, Code, KEY_O},
+  {"p", "P", 1.0, Code, KEY_P},
   {"", "", 0.0, EndRow},
 
-  {"Cmp", "Cmp", 1.0, Compose, .scheme = 1},
-  {"Caps", "Caps", 1.0, Mod, CapsLock, .scheme = 1},
-  {"a", "A", 1.0, Code, KEY_A, &layouts[ComposeA]},
-  {"s", "S", 1.0, Code, KEY_S, &layouts[ComposeS]},
-  {"d", "D", 1.0, Code, KEY_D, &layouts[ComposeD]},
-  {"f", "F", 1.0, Code, KEY_F, &layouts[ComposeF]},
-  {"g", "G", 1.0, Code, KEY_G, &layouts[ComposeG]},
-  {"h", "H", 1.0, Code, KEY_H, &layouts[ComposeH]},
-  {"j", "J", 1.0, Code, KEY_J, &layouts[ComposeJ]},
-  {"k", "K", 1.0, Code, KEY_K, &layouts[ComposeK]},
-  {"l", "L", 1.0, Code, KEY_L, &layouts[ComposeL]},
-  {";", ":", 1.0, Code, KEY_SEMICOLON},
-  {"'", "''", 1.0, Code, KEY_APOSTROPHE, &layouts[ComposeBracket]},
-  {"Enter", "Enter", 1.5, Code, KEY_ENTER, .scheme = 1},
+  {"Ctr", "Ctr", 2.5, Mod, Ctrl, .scheme = 1},
+  {"a", "A", 1.0, Code, KEY_A},
+  {"s", "S", 1.0, Code, KEY_S},
+  {"d", "D", 1.0, Code, KEY_D},
+  {"f", "F", 1.0, Code, KEY_F},
+  {"g", "G", 1.0, Code, KEY_G},
+  {"h", "H", 1.0, Code, KEY_H},
+  {"j", "J", 1.0, Code, KEY_J},
+  {"k", "K", 1.0, Code, KEY_K},
+  {"l", "L", 1.0, Code, KEY_L},
+  // Enter dropped: this row was the widest; a half-unit spacer that is not
+  // a key anywhere near the letters is the least harmful filler
+  {"", "", 0.5, Pad},
   {"", "", 0.0, EndRow},
 
-  {"⇧", "⇫", 2.5, Mod, Shift, .scheme = 1},
-  {"z", "Z", 1.0, Code, KEY_Z, &layouts[ComposeZ]},
-  {"x", "X", 1.0, Code, KEY_X, &layouts[ComposeX]},
-  {"c", "C", 1.0, Code, KEY_C, &layouts[ComposeC]},
-  {"v", "V", 1.0, Code, KEY_V, &layouts[ComposeV]},
-  {"b", "B", 1.0, Code, KEY_B, &layouts[ComposeB]},
-  {"n", "N", 1.0, Code, KEY_N, &layouts[ComposeN]},
-  {"m", "M", 1.0, Code, KEY_M, &layouts[ComposeM]},
-  {",", "<", 1.0, Code, KEY_COMMA, &layouts[ComposeMath]},
-  {".", ">", 1.0, Code, KEY_DOT, &layouts[ComposePunctuation]},
-  {"/", "?", 1.0, Code, KEY_SLASH},
-  {"↑", "↑", 1.0, Code, KEY_UP, .scheme = 1},
-  {"⇧", "⇫", 1.0, Mod, Shift, .scheme = 1},
+  {"Cap", "Cap", 1.0, Mod, CapsLock, .scheme = 1},
+  {"⇧", "⇫", 2.0, Mod, Shift, .scheme = 1},
+  {"z", "Z", 1.0, Code, KEY_Z},
+  {"x", "X", 1.0, Code, KEY_X},
+  {"c", "C", 1.0, Code, KEY_C},
+  {"v", "V", 1.0, Code, KEY_V},
+  {"b", "B", 1.0, Code, KEY_B},
+  {"n", "N", 1.0, Code, KEY_N},
+  {"m", "M", 1.0, Code, KEY_M},
+  {"⌫", "⌫", 2.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"⌨͕", "⌨͔", 1.5, NextLayer, .scheme = 1},
-  {"Ctr", "Ctr", 1.0, Mod, Ctrl, .scheme = 1},
-  {"Sup", "Sup", 1.0, Mod, Super, .scheme = 1},
   {"Alt", "Alt", 1.0, Mod, Alt, .scheme = 1},
-  {"", "", 5.0, Code, KEY_SPACE},
-  {"AGr", "AGr", 1.0, Mod, AltGr, .scheme = 1},
-  {"Ctr", "Ctr", 1.0, Mod, Ctrl, .scheme = 1},
-  {"←", "←", 1.0, Code, KEY_LEFT, .scheme = 1},
-  {"↓", "↓", 1.0, Code, KEY_DOWN, .scheme = 1},
-  {"→", "→", 1.0, Code, KEY_RIGHT, .scheme = 1},
+  {"Sup", "Sup", 2.0, Mod, Super, .scheme = 1},
+  {"無", "無", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
+  {"", "", 3.0, Code, KEY_SPACE},
+  {"漢", "漢", 2.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"Enter", "Enter", 2.0, Code, KEY_ENTER, .scheme = 1},
   /* end of layout */
   {"", "", 0.0, Last},
 };
 
 static struct key keys_special[] = {
-  {"", "", 13.25, Pad},
-  {"Ins", "Ins", 1.25, Code, KEY_INSERT, .scheme = 1},
+  {"Esc", "Esc", 1.0, Code, KEY_ESC, .scheme = 1},
+  {"`", "~", 1.0, Code, KEY_GRAVE, .scheme = 1},
+  {"3", "#", 1.0, Code, KEY_3},
+  {"4", "$", 1.0, Code, KEY_4},
+  {"5", "%", 1.0, Code, KEY_5},
+  {"6", "^", 1.0, Code, KEY_6},
+  {"7", "&", 1.0, Code, KEY_7},
+  {"8", "*", 1.0, Code, KEY_8},
+  {"-", "_", 1.0, Code, KEY_MINUS, .scheme = 1},
+  {"=", "+", 1.0, Code, KEY_EQUAL, .scheme = 1},
+  {"⌨͕", "⌨͔", 2.0, NextLayer, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"", "", 14.5, Pad},
+  // The back layer keeps the surface's physical arrangement exactly --
+  // muscle memory maps a slot to one position, changing what fills it as
+  // the layer flips. The letter slots that carry missing symbols print
+  // the symbol instead; everything else is untouched.
+  // Slots: 1->`, 9->-, 0->=, i->[ (with {), o->] (with }), p->\ (with |),
+  // k->; (with :), l->' (with ''), b->, (with <), n->. (with >), m->/ (with ?)
+  {"Tab", "Tab", 2.0, Code, KEY_TAB, .scheme = 1},
+  {"q", "Q", 1.0, Code, KEY_Q},
+  {"w", "W", 1.0, Code, KEY_W},
+  {"e", "E", 1.0, Code, KEY_E},
+  {"r", "R", 1.0, Code, KEY_R},
+  {"t", "T", 1.0, Code, KEY_T},
+  {"y", "Y", 1.0, Code, KEY_Y},
+  {"u", "U", 1.0, Code, KEY_U},
+  {"[", "{", 1.0, Code, KEY_LEFTBRACE, .scheme = 1},
+  {"]", "}", 1.0, Code, KEY_RIGHTBRACE, .scheme = 1},
+  {"\\", "|", 1.0, Code, KEY_BACKSLASH, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"", "", 14.5, Pad},
+  {"Ctr", "Ctr", 2.5, Mod, Ctrl, .scheme = 1},
+  {"a", "A", 1.0, Code, KEY_A},
+  {"s", "S", 1.0, Code, KEY_S},
+  {"d", "D", 1.0, Code, KEY_D},
+  {"f", "F", 1.0, Code, KEY_F},
+  {"g", "G", 1.0, Code, KEY_G},
+  {"h", "H", 1.0, Code, KEY_H},
+  {"j", "J", 1.0, Code, KEY_J},
+  {";", ":", 1.0, Code, KEY_SEMICOLON, .scheme = 1},
+  {"'", "''", 1.0, Code, KEY_APOSTROPHE, .scheme = 1},
+  {"", "", 0.5, Pad},
   {"", "", 0.0, EndRow},
 
-  {"", "", 14.5, Pad},
+  {"Cap", "Cap", 1.0, Mod, CapsLock, .scheme = 1},
+  {"⇧", "⇫", 2.0, Mod, Shift, .scheme = 1},
+  {"z", "Z", 1.0, Code, KEY_Z},
+  {"x", "X", 1.0, Code, KEY_X},
+  {"c", "C", 1.0, Code, KEY_C},
+  {"v", "V", 1.0, Code, KEY_V},
+  {",", "<", 1.0, Code, KEY_COMMA, .scheme = 1},
+  {".", ">", 1.0, Code, KEY_DOT, .scheme = 1},
+  {"/", "?", 1.0, Code, KEY_SLASH, .scheme = 1},
+  {"⌫", "⌫", 2.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"⇧", "⇫", 2.5, Mod, Shift, .scheme = 1},
-  {"", "", 10.0, Pad},
-  {"PgUp", "PgUp", 1.0, Code, KEY_PAGEUP, .scheme = 1},
-  {"⇧", "⇫", 1.0, Mod, Shift, .scheme = 1},
-  {"", "", 0.0, EndRow},
-
-  {"⌨͕", "⌨͔", 0.75, NextLayer, .scheme = 1},
-  {"Abc", "Abc", 0.75, BackLayer, .scheme = 1},
-
-  {"Ctr", "Ctr", 1.0, Mod, Ctrl, .scheme = 1},
-  {"Sup", "Sup", 1.0, Mod, Super, .scheme = 1},
   {"Alt", "Alt", 1.0, Mod, Alt, .scheme = 1},
-  {"", "", 5.0, Pad},
-  {"AGr", "AGr", 1.0, Mod, AltGr, .scheme = 1},
-  {"Ctr", "Ctr", 1.0, Mod, Ctrl, .scheme = 1},
-  {"Home", "Home", 1.0, Code, KEY_HOME, .scheme = 1},
-  {"PgDn", "PgDn", 1.0, Code, KEY_PAGEDOWN, .scheme = 1},
-  {"End", "End", 1.0, Code, KEY_END, .scheme = 1},
+  {"Sup", "Sup", 2.0, Mod, Super, .scheme = 1},
+  {"無", "無", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
+  {"", "", 3.0, Code, KEY_SPACE},
+  {"漢", "漢", 2.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"Enter", "Enter", 2.0, Code, KEY_ENTER, .scheme = 1},
+  /* end of layout */
+  {"", "", 0.0, Last},
+};
+
+/* Japanese flick (kana) keyboard, 6 columns x 4 rows, every row 6.0U so all
+ * vertical grid lines line up and the kana 10-key sits as a clean 3x4 grid in
+ * columns 3-5 (column indices 2,3,4).
+ *
+ * Column roles:
+ *   0: left function strip (tab / emoji / [ab] cursor strip / handakuten)
+ *   1: mode strip (\u6570, \uff21, kana anchor, small)
+ *   2..4: the kana 10-key (flick: C=L=left, U=up, R=right, D=down)
+ *   5: right function strip (qwerty-exit, space, backspace, enter)
+ *
+ * Key type KanaGly (glyph carried in `label`) is the flick engine input; the
+ * sequences per direction live in keyboard.c::kana_flick_table. Functional
+ * keys:
+ *   "\u2a08\u0338"  (col5 row0): KanaOff - KEY_MUHENKAN + back to Full, on unpress
+ *   "\u3000"/"\u2302"/"\u21a9\ufe0f": Code keys, standard
+ *   "\u309b" "\u309c" "\u5c0f": KanaMod - one-shot modifier layers
+ * Keys marked F are THIS-phase no-ops (drawn in a muted scheme, no action):
+ *   \u21a5(tab), \u6570, \ud83d\ude42, \uff21, the \u2190\u2192 strip, and the kana anchor
+ *   " \u3042" in row2 col1 (returns from a future katakana face; noop there).
+ *
+ * Flick table (rows L U R D, first char = tap):
+ *  \u3042  \u3044\u3046\u3048\u304a | \u304b ...(standard jis 12-key)
+ *  \u3084: L/- U=\u3086 R/- D=\u3088 ; \u308f: L=\u3092 U=\u3093 R=\u30fc ; \u3001: L=\u3002 U=\uff1f R=\uff01
+ */
+#define KANA_FLICK_ROWS(...) ((const char *[5]){__VA_ARGS__})
+
+static struct key keys_kana_flick[] = {
+  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"数", "", 1.0, KanaNoop, .scheme = 1},
+  {"あ", "", 1.0, KanaGly, .scheme = 0},
+  {"か", "", 1.0, KanaGly, .scheme = 0},
+  {"さ", "", 1.0, KanaGly, .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"Ａ", "", 1.0, KanaNoop, .scheme = 1},
+  {"た", "", 1.0, KanaGly, .scheme = 0},
+  {"な", "", 1.0, KanaGly, .scheme = 0},
+  {"は", "", 1.0, KanaGly, .scheme = 0},
+  {"空", "", 1.0, Code, KEY_SPACE},
+  {"", "", 0.0, EndRow},
+
+  {"←→", "", 1.0, KanaNoop, .scheme = 1},
+  {"あ", "", 1.0, KanaNoop, .scheme = 0},
+  {"ま", "", 1.0, KanaGly, .scheme = 0},
+  {"や", "", 1.0, KanaGly, .scheme = 0},
+  {"ら", "", 1.0, KanaGly, .scheme = 0},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
+  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
+  {"わ", "", 1.0, KanaGly, .scheme = 0},
+  {"、", "", 1.0, KanaGly, .scheme = 0},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  /* end of layout */
+  {"", "", 0.0, Last},
+};
+
+/* One-shot modifier layers. INVARIANT: the grid is cell-for-cell identical
+ * to keys_kana_flick — same glyph column belongs to the same row and
+ * direction. Only the modified column HEAD changes: a cell whose kana has a
+ * voiced/handakuten/small form shows the modified head (KanaGlyMut /
+ * KanaGlySmall) and its 5-way flick behaves exactly like the plain head's;
+ * every other cell shows the plain head and stays KanaGlyPlain, so typing
+ * through a one-shot layer works like the plain layer with just one head
+ * changed. Modifier cells (゛゜小) return/cross-switch at press. */
+static struct key keys_kana_dakuten[] = {
+  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"数", "", 1.0, KanaNoop, .scheme = 1},
+  {"ゔ", "", 1.0, KanaGlyMut, .scheme = 0},
+  {"が", "", 1.0, KanaGlyMut, .scheme = 0},
+  {"ざ", "", 1.0, KanaGlyMut, .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"Ａ", "", 1.0, KanaNoop, .scheme = 1},
+  {"だ", "", 1.0, KanaGlyMut, .scheme = 0},
+  {"な", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"ば", "", 1.0, KanaGlyMut, .scheme = 0},
+  {"空", "", 1.0, Code, KEY_SPACE},
+  {"", "", 0.0, EndRow},
+
+  {"←→", "", 1.0, KanaNoop, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"ま", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"や", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"ら", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
+  {"゛", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
+  {"わ", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  /* end of layout */
+  {"", "", 0.0, Last},
+};
+
+/* handakuten (゜): only the は column voices (ぱ row head); plain elsewhere */
+static struct key keys_kana_handakuten[] = {
+  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"数", "", 1.0, KanaNoop, .scheme = 1},
+  {"あ", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"か", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"さ", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"Ａ", "", 1.0, KanaNoop, .scheme = 1},
+  {"た", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"な", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"ぱ", "", 1.0, KanaGlyMut, .scheme = 0},
+  {"空", "", 1.0, Code, KEY_SPACE},
+  {"", "", 0.0, EndRow},
+
+  {"←→", "", 1.0, KanaNoop, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"ま", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"や", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"ら", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"゜", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
+  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
+  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
+  {"わ", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  /* end of layout */
+  {"", "", 0.0, Last},
+};
+
+/* small (小): small a-row head (ぁ...), っ on the た column, ゃ on the や
+ * column, ゎ on the わ cell. R flicks (i/u/e/o) produce the small vowel/ya
+ * variants via the kana_small_table. */
+static struct key keys_kana_small[] = {
+  {"⇥", "", 1.0, KanaNoop, .scheme = 1},
+  {"数", "", 1.0, KanaNoop, .scheme = 1},
+  {"ぁ", "", 1.0, KanaGlySmall, .scheme = 0},
+  {"か", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"さ", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"⌨️", "", 1.0, KanaOff, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"Ａ", "", 1.0, KanaNoop, .scheme = 1},
+  {"っ", "", 1.0, KanaGlySmall, .scheme = 0},
+  {"な", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"は", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"空", "", 1.0, Code, KEY_SPACE},
+  {"", "", 0.0, EndRow},
+
+  {"←→", "", 1.0, KanaNoop, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"ま", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"ゃ", "", 1.0, KanaGlySmall, .scheme = 0},
+  {"ら", "", 1.0, KanaGlyPlain, .scheme = 0},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"小", "", 1.0, KanaCancel, 0, &layouts[KanaFlick], .scheme = 0},
+  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
+  {"ゎ", "", 1.0, KanaGlySmall, .scheme = 0},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"↩️", "", 1.0, Code, KEY_ENTER, .scheme = 1},
   /* end of layout */
   {"", "", 0.0, Last},
 };
 
 static struct key keys_cyrillic[] = {
-  {"Esc", "Esc", 1.25, Code, KEY_ESC, .scheme = 1},
-  {"F1", "F1", 1.0, Code, KEY_F1, .scheme = 1},
-  {"F2", "F2", 1.0, Code, KEY_F2, .scheme = 1},
-  {"F3", "F3", 1.0, Code, KEY_F3, .scheme = 1},
-  {"F4", "F4", 1.0, Code, KEY_F4, .scheme = 1},
-  {"F5", "F5", 1.0, Code, KEY_F5, .scheme = 1},
-  {"F6", "F6", 1.0, Code, KEY_F6, .scheme = 1},
-  {"F7", "F7", 1.0, Code, KEY_F7, .scheme = 1},
-  {"F8", "F8", 1.0, Code, KEY_F8, .scheme = 1},
-  {"F9", "F9", 1.0, Code, KEY_F9, .scheme = 1},
-  {"F10", "F10", 1.0, Code, KEY_F10, .scheme = 1},
-  {"F11", "F11", 1.0, Code, KEY_F11, .scheme = 1},
-  {"F12", "F12", 1.0, Code, KEY_F12, .scheme = 1},
-  {"Del", "Del", 1.25, Code, KEY_DELETE, .scheme = 1},
-  {"", "", 0.0, EndRow},
-
-  {"ё", "Ё", 1.0, Code, KEY_GRAVE},
-  {"1", "!", 1.0, Code, KEY_1},
-  {"2", "\"", 1.0, Code, KEY_2},
-  {"3", "#", 1.0, Code, KEY_3},
-  {"4", "*", 1.0, Code, KEY_4},
-  {"5", ":", 1.0, Code, KEY_5},
-  {"6", ",", 1.0, Code, KEY_6},
-  {"7", ".", 1.0, Code, KEY_7},
-  {"8", ";", 1.0, Code, KEY_8},
-  {"9", "(", 1.0, Code, KEY_9, &layouts[ComposeBracket]},
-  {"0", ")", 1.0, Code, KEY_0, &layouts[ComposeBracket]},
-  {"-", "_", 1.0, Code, KEY_MINUS, &layouts[ComposeBracket]},
-  {"=", "+", 1.0, Code, KEY_EQUAL, &layouts[ComposeBracket]},
-  {"⌫", "⌫", 1.5, Code, KEY_BACKSPACE, .scheme = 1},
-  {"", "", 0.0, EndRow},
-
-  {"Tab", "Tab", 1.5, Code, KEY_TAB, .scheme = 1},
-  {"й", "Й", 1.0, Code, KEY_Q, &layouts[ComposeCyrJ]},
-  {"ц", "Ц", 1.0, Code, KEY_W, &layouts[ComposeCyrTse]},
+  {"Tab", "Tab", 2.0, Code, KEY_TAB, .scheme = 1},
+  {"й", "Й", 1.0, Code, KEY_Q},
+  {"ц", "Ц", 1.0, Code, KEY_W},
   {"у", "У", 1.0, Code, KEY_E},
-  {"к", "К", 1.0, Code, KEY_R, &layouts[ComposeCyrK]},
-  {"е", "Е", 1.0, Code, KEY_T, &layouts[ComposeCyrE]},
+  {"к", "К", 1.0, Code, KEY_R},
+  {"е", "Е", 1.0, Code, KEY_T},
   {"н", "Н", 1.0, Code, KEY_Y},
-  {"г", "Г", 1.0, Code, KEY_U, &layouts[ComposeCyrG]},
-  {"ш", "ш", 1.0, Code, KEY_I},
-  {"щ", "щ", 1.0, Code, KEY_O},
-  {"з", "з", 1.0, Code, KEY_P},
-  {"х", "Х", 1.0, Code, KEY_LEFTBRACE},
-  {"ъ", "Ъ", 1.0, Code, KEY_RIGHTBRACE},
-  {"\\", "|", 1.0, Code, KEY_BACKSLASH},
+  {"г", "Г", 1.0, Code, KEY_U},
+  {"ш", "Ш", 1.0, Code, KEY_I},
+  {"щ", "Щ", 1.0, Code, KEY_O},
+  {"з", "З", 1.0, Code, KEY_P},
   {"", "", 0.0, EndRow},
 
-  {"Cmp", "Cmp", 1.0, Compose, .scheme = 1},
-  {"Caps", "Caps", 1.0, Mod, CapsLock, .scheme = 1},
+  {"Ctr", "Ctr", 2.5, Mod, Ctrl, .scheme = 1},
   {"ф", "Ф", 1.0, Code, KEY_A},
-  {"ы", "Ы", 1.0, Code, KEY_S, &layouts[ComposeCyrI]},
+  {"ы", "Ы", 1.0, Code, KEY_S},
   {"в", "В", 1.0, Code, KEY_D},
   {"а", "А", 1.0, Code, KEY_F},
   {"п", "П", 1.0, Code, KEY_G},
   {"р", "Р", 1.0, Code, KEY_H},
   {"о", "О", 1.0, Code, KEY_J},
-  {"л", "Л", 1.0, Code, KEY_K, &layouts[ComposeCyrL]},
+  {"л", "Л", 1.0, Code, KEY_K},
   {"д", "Д", 1.0, Code, KEY_L},
-  {"ж", "Ж", 1.0, Code, KEY_SEMICOLON},
-  {"э","Э", 1.0, Code, KEY_APOSTROPHE, &layouts[ComposeCyrE]},
-  {"Enter", "Enter", 1.5, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 0.5, Pad},
   {"", "", 0.0, EndRow},
 
-  {"⇧", "⇫", 2.5, Mod, Shift, .scheme = 1},
+  {"Cap", "Cap", 1.0, Mod, CapsLock, .scheme = 1},
+  {"⇧", "⇫", 2.0, Mod, Shift, .scheme = 1},
   {"я", "Я", 1.0, Code, KEY_Z},
-  {"ч", "Ч", 1.0, Code, KEY_X, &layouts[ComposeCyrChe]},
-  {"c", "С", 1.0, Code, KEY_C},
+  {"ч", "Ч", 1.0, Code, KEY_X},
+  {"с", "С", 1.0, Code, KEY_C},
   {"м", "М", 1.0, Code, KEY_V},
-  {"и", "И", 1.0, Code, KEY_B, &layouts[ComposeCyrI]},
+  {"и", "И", 1.0, Code, KEY_B},
   {"т", "Т", 1.0, Code, KEY_N},
   {"ь", "Ь", 1.0, Code, KEY_M},
-  {"б", "Б", 1.0, Code, KEY_COMMA},
-  {"ю", "Ю", 1.0, Code, KEY_DOT},
-  {"/", "?", 1.0, Code, KEY_SLASH, &layouts[ComposePunctuation]},
-  {"↑", "↑", 1.0, Code, KEY_UP, .scheme = 1},
-  {"⇧", "⇫", 1.0, Mod, Shift, .scheme = 1},
+  {"⌫", "⌫", 2.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"⌨͕", "⌨͔", 1.5, NextLayer, .scheme = 1},
-  {"Ctr", "Ctr", 1.0, Mod, Ctrl, .scheme = 1},
-  {"Sup", "Sup", 1.0, Mod, Super, .scheme = 1},
   {"Alt", "Alt", 1.0, Mod, Alt, .scheme = 1},
-  {"", "", 5.0, Code, KEY_SPACE},
-  {"AGr", "AGr", 1.0, Mod, AltGr, .scheme = 1},
-  {"Ctr", "Ctr", 1.0, Mod, Ctrl, .scheme = 1},
-  {"←", "←", 1.0, Code, KEY_LEFT, .scheme = 1},
-  {"↓", "↓", 1.0, Code, KEY_DOWN, .scheme = 1},
-  {"→", "→", 1.0, Code, KEY_RIGHT, .scheme = 1},
+  {"Sup", "Sup", 2.0, Mod, Super, .scheme = 1},
+  {"無", "無", 2.0, Code, KEY_MUHENKAN, .scheme = 1},
+  {"", "", 3.0, Code, KEY_SPACE},
+  {"漢", "漢", 2.0, Code, KEY_HIRAGANA, .scheme = 1},
+  {"Enter", "Enter", 2.0, Code, KEY_ENTER, .scheme = 1},
   /* end of layout */
   {"", "", 0.0, Last},
 };

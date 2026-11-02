@@ -61,8 +61,8 @@ static struct drwsurf draw_surf, popup_draw_surf;
 
 /* layer surface parameters */
 static uint32_t layer = ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY;
+/* RIGHT-only: a fixed width anchored on both edges gets centered */
 static uint32_t anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
-                         ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
                          ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
 
 /* application state */
@@ -270,6 +270,17 @@ wl_touch_down(void *data, struct wl_touch *wl_touch, uint32_t serial,
 
     next_key = kbd_get_key(&keyboard, touch_x, touch_y);
     if (next_key) {
+        /* kana keys need the press point for the flick vector */
+        if (next_key->type == KanaGly || next_key->type == KanaGlyMut ||
+            next_key->type == KanaGlyPlain ||
+            next_key->type == KanaGlySmall || next_key->type == KanaOn ||
+            next_key->type == KanaOff || next_key->type == KanaNoop ||
+            next_key->type == KanaMod || next_key->type == KanaCancel) {
+            keyboard.cur_down_x = touch_x;
+            keyboard.cur_down_y = touch_y;
+            keyboard.cur_up_x = touch_x;
+            keyboard.cur_up_y = touch_y;
+        }
         kbd_press_key(&keyboard, next_key, time);
     } else if (keyboard.compose) {
         keyboard.compose = 0;
@@ -286,7 +297,10 @@ wl_touch_up(void *data, struct wl_touch *wl_touch, uint32_t serial,
         return;
     }
 
+    /* synthesize an unpress: the up event carries the release coordinates,
+     * which the kana flick engine needs for its direction vector */
     kbd_release_key(&keyboard, time);
+    (void)id; /* single-touch layer: ignore the id */
 }
 
 void
@@ -303,6 +317,7 @@ wl_touch_motion(void *data, struct wl_touch *wl_touch, uint32_t time,
     touch_y = wl_fixed_to_int(y);
 
     kbd_motion_key(&keyboard, time, touch_x, touch_y);
+    (void)id;
 }
 
 void
@@ -371,12 +386,27 @@ wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t serial,
     if (cur_press) {
         kbd_unpress_key(&keyboard, time);
     } else {
+        /* release coords first: the kana flick engine reads them */
+        keyboard.cur_up_x = cur_x;
+        keyboard.cur_up_y = cur_y;
         kbd_release_key(&keyboard, time);
     }
 
     if (cur_press && cur_x >= 0 && cur_y >= 0) {
         next_key = kbd_get_key(&keyboard, cur_x, cur_y);
         if (next_key) {
+            /* kana keys need the press point for the flick vector */
+            if (next_key->type == KanaGly || next_key->type == KanaGlyMut ||
+                next_key->type == KanaGlyPlain ||
+                next_key->type == KanaGlySmall ||
+                next_key->type == KanaOn || next_key->type == KanaOff ||
+                next_key->type == KanaNoop || next_key->type == KanaMod ||
+                next_key->type == KanaCancel) {
+                keyboard.cur_down_x = cur_x;
+                keyboard.cur_down_y = cur_y;
+                keyboard.cur_up_x = cur_x;
+                keyboard.cur_up_y = cur_y;
+            }
             kbd_press_key(&keyboard, next_key, time);
         } else if (keyboard.compose) {
             keyboard.compose = 0;
@@ -446,7 +476,7 @@ handle_global(void *data, struct wl_registry *registry, uint32_t name,
 {
     if (strcmp(interface, wl_compositor_interface.name) == 0) {
         compositor =
-            wl_registry_bind(registry, name, &wl_compositor_interface, 6);
+            wl_registry_bind(registry, name, &wl_compositor_interface, 5);
     } else if (strcmp(interface, wl_shm_interface.name) == 0) {
         draw_ctx.shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
     } else if (strcmp(interface, wl_seat_interface.name) == 0) {
@@ -578,7 +608,7 @@ redimension_keyboard()
     } else if (dock_mode != DOCK_FULL) {
         keyboard.w = (uint32_t)((double)available_width * width_ratio);
     } else {
-        keyboard.w = available_width;
+        keyboard.w = available_width / 5 * 2;  // 40% of the screen, iPad-style
     }
     keyboard.h = height;
     keyboard.layout = &keyboard.layouts[layer];
@@ -599,7 +629,7 @@ layer_surface_configure(void *data, struct zwlr_layer_surface_v1 *surface,
     };
 
     // Not what we expected, or redimension, refresh and restart
-    if (keyboard.w != w || keyboard.h != h) {
+    keyboard.w = w; keyboard.h = h; if (0) {
         zwlr_layer_surface_v1_ack_configure(surface, serial);
         hide();
         show();
@@ -817,19 +847,29 @@ show()
     layer_surface = zwlr_layer_shell_v1_get_layer_surface(
         layer_shell, draw_surf.surf, current_output_data, layer, namespace);
 
-    anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
-    uint32_t req_w = 0;
-    if (dock_mode == DOCK_LEFT) {
-        anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT;
-        req_w = keyboard.w;
-    } else if (dock_mode == DOCK_RIGHT) {
-        anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-        req_w = keyboard.w;
+    /* ally: fixed width, anchored RIGHT+BOTTOM (both-side anchoring with a
+     * fixed width would center the surface); margins flush (0) */
+    if (dock_mode == DOCK_FULL && custom_width <= 0) {
+        anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
+                 ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+        zwlr_layer_surface_v1_set_size(layer_surface, keyboard.w, height);
+        zwlr_layer_surface_v1_set_margin(layer_surface, 0, 0, 0, 0);
     } else {
-        anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT | ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
-        req_w = 0;
+        anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM;
+        uint32_t req_w = 0;
+        if (dock_mode == DOCK_LEFT) {
+            anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT;
+            req_w = keyboard.w;
+        } else if (dock_mode == DOCK_RIGHT) {
+            anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+            req_w = keyboard.w;
+        } else {
+            anchor |= ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
+                      ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+            req_w = 0;
+        }
+        zwlr_layer_surface_v1_set_size(layer_surface, req_w, height);
     }
-    zwlr_layer_surface_v1_set_size(layer_surface, req_w, height);
     zwlr_layer_surface_v1_set_anchor(layer_surface, anchor);
     if (keyboard.exclusive) {
         zwlr_layer_surface_v1_set_exclusive_zone(layer_surface, height);
@@ -1088,6 +1128,9 @@ main(int argc, char **argv)
             keyboard.print = true;
         } else if (!strcmp(argv[i], "-O")) {
             keyboard.print_intersect = true;
+        } else if ((!strcmp(argv[i], "--top")) || (!strcmp(argv[i], "-top"))) {
+            anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
+                     ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
         } else if ((!strcmp(argv[i], "-hidden")) ||
                    (!strcmp(argv[i], "--hidden"))) {
             hidden = true;

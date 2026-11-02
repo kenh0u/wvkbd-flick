@@ -26,6 +26,37 @@ enum key_type {
 	           // upon next keypress
 	EndRow,    // Incidates the end of a key row
 	Last,      // Indicated the end of a layout
+	// --- Japanese flick (kana) key types, handled in keyboard.c ---
+	// KanaGly: tap/flick key. `label` (a kana glyph) indexes kana_flick_table;
+	//          the romaji sequence for the chosen direction is sent through
+	//          the IME's preedit (plain keycodes from the latin keymap).
+	// KanaGlyMut: like KanaGly but the key lives on a one-shot modifier
+	//          layer: on tap the modifier applies; if the kana has no modified
+	//          form the plain kana is sent instead. Either way the one-shot
+	//          ends and we drop back to KanaFlick.
+	// KanaGlyPlain: KanaGlyMut without the modifier (unmodified kana on a
+	//          modifier layer).
+	// KanaGlySmall: KanaGlyMut for the small-kana modifier; `label` is the
+	//          PLAIN glyph, the small mapping lives in the table.
+	// KanaMod: one-shot modifier entry; switches to `layout` on PRESS (so the
+	//          labels change immediately), never sends a keycode itself.
+	// KanaCancel: exit a one-shot modifier layer back to KanaFlick (press-time
+	//          switch, no keycode).
+	// KanaOn: (QWERTY layers) send `code` = KEY_HIRAGANA (IME on) and switch
+	//          to KanaFlick on UNPRESS (row-count changes make press-time
+	//          layout switches unsafe for the up handler).
+	// KanaOff: (flick layers) send KEY_MUHENKAN (IME off) and switch to Full
+	//          on unpress.
+	// KanaNoop: drawn key, no action (phase-1 placeholders).
+	KanaGly,
+	KanaGlyMut,
+	KanaGlyPlain,
+	KanaGlySmall,
+	KanaMod,
+	KanaCancel,
+	KanaOn,
+	KanaOff,
+	KanaNoop,
 };
 
 /* Modifiers passed to the virtual_keyboard protocol. They are based on
@@ -125,6 +156,12 @@ struct kbd {
 	enum layout_id *layers;
 	enum layout_id *landscape_layers;
 
+	// kana flick engine: touch vector for the pending kana key and the
+	// deferred (unpress-time) KanaOn/KanaOff layer switch
+	uint32_t cur_down_x, cur_down_y; // press point of the pending kana key
+	uint32_t cur_up_x, cur_up_y;     // last motion / release point
+	uint8_t kana_pending_switch;     // 0 or the KanaOn/KanaOff enum key_type
+
 	struct drwsurf *surf;
 	struct drwsurf *popup_surf;
 	struct zwp_virtual_keyboard_v1 *vkbd;
@@ -156,6 +193,9 @@ uint8_t kbd_get_rows(struct layout *l);
 double kbd_get_row_length(struct key *k);
 void kbd_next_layer(struct kbd *kb, struct key *k, bool invert);
 void kbd_switch_layout(struct kbd *kb, struct layout *l, size_t layer_index);
+void kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
+                    uint32_t time);
+
 void create_and_upload_keymap(struct kbd *kb, const char *name, uint32_t comp_unichr);
 int64_t monotime();
 
