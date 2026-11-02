@@ -57,7 +57,17 @@ static const struct flick_entry kana_flick_table[] = {
      * keys). fcitx5-mozc's romaji map turns , . into 、。 and passes
      * ? ! straight through; the old SH+SLASH / SH+1 wraps lost the shift
      * on the way to the compositor (user saw ・ and １). */
-    { "、", { {242}, {243}, {244}, {245}, {245} } },
+    {0}, /* 、 lives in kana_punct_table (unicode path) */
+    {0},
+};
+
+/* punctuation (、 cell): exact unicode through the COMP/Copy path */
+struct punct_entry {
+    const char *glyph;
+    uint32_t cps[5]; /* C L U R D, 0 = none */
+};
+static const struct punct_entry kana_punct_table[] = {
+    { "、", {0x3001, 0x3002, 0xFF1F, 0, 0xFF01} }, /* C、 L。 U？ R- D！ */
     {0},
 };
 
@@ -170,6 +180,26 @@ flick_send_seq(struct kbd *kb, uint32_t time, const uint8_t *seq)
         flick_send_key(kb, time, *seq);
 }
 
+/* 0x01 marker + a UCS-4 codepoint: deliver the exact unicode character via
+ * the Copy mechanism (temp keymap + COMP key, keycode 135). Clients resolve
+ * key events with the PHYSICAL keyboard's keymap on this compositor, so
+ * custom XKB levels for evdev 242-245 came out as XF86 keys; raw `shift +
+ * slash/1` wraps lose the shift and reached mozc as `/` and `1`. Sending the
+ * final keysym through the COMP path bypasses both problems. */
+#define FLICK_UC 0x01
+static void
+flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
+{
+    create_and_upload_keymap(kb, kb->layout->keymap_name, uc);
+    zwp_virtual_keyboard_v1_modifiers(kb->vkbd, 0, 0, 0, 0);
+    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127, /* COMP key */
+                                WL_KEYBOARD_KEY_STATE_PRESSED);
+    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127,
+                                WL_KEYBOARD_KEY_STATE_RELEASED);
+    /* restore the layout's regular keymap so normal keys keep working */
+    create_and_upload_keymap(kb, kb->layout->keymap_name, 0);
+}
+
 /* current layout id (kb->layout is a pointer into kb->layouts) */
 static enum layout_id
 kana_layout_id(struct kbd *kb)
@@ -189,6 +219,21 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
 {
     enum flick_dir dir = kana_flick_dir(dx, dy);
     enum layout_id cur = kana_layout_id(kb);
+    /* punctuation cell first: exact unicode, no scancode/keymap games */
+    for (const struct punct_entry *p = kana_punct_table; p->glyph; p++) {
+        if (strcmp(p->glyph, k->label) != 0)
+            continue;
+        uint32_t cp = p->cps[dir];
+        if (kb->debug)
+            fprintf(stderr, "flick: glyph='%s' dir=%d -> unicode %04x\n",
+                    k->label, dir, cp);
+        if (cp)
+            flick_send_unicode(kb, time, cp);
+        if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall)
+            kbd_switch_layout(kb, &kb->layouts[KanaFlick],
+                              kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
+        return;
+    }
     const uint8_t *seq = flick_lookup(cur, k->label, dir, k->type == KanaGlySmall);
     if (kb->debug) {
         fprintf(stderr, "flick: glyph='%s' dx=%d dy=%d dir=%d -> seq",

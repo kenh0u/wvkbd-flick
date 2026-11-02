@@ -351,7 +351,6 @@ static struct key keys_kana_flick[] = {
   {"わ", "", 1.0, KanaGly, .scheme = 0},
   {"、", "", 1.0, KanaGly, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"", "", 0.0, EndRow},
 
   /* end of layout */
   {"", "", 0.0, Last},
@@ -396,7 +395,6 @@ static struct key keys_kana_dakuten[] = {
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"", "", 0.0, EndRow},
 
   /* end of layout */
   {"", "", 0.0, Last},
@@ -434,7 +432,6 @@ static struct key keys_kana_handakuten[] = {
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"", "", 0.0, EndRow},
 
   /* end of layout */
   {"", "", 0.0, Last},
@@ -474,7 +471,6 @@ static struct key keys_kana_small[] = {
   {"ゎ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"", "", 0.0, EndRow},
 
   /* end of layout */
   {"", "", 0.0, Last},
