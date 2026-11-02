@@ -67,7 +67,7 @@ struct punct_entry {
     uint32_t cps[5]; /* C L U R D, 0 = none */
 };
 static const struct punct_entry kana_punct_table[] = {
-    { "、", {KEY_COMMA, KEY_DOT, 0xFF1F, 0xFF01, END} }, /* C, L. U？ R！ (COMP: shift lost on umbriel seat path) */
+    { "、。!?", {KEY_COMMA, KEY_DOT, 0xFF1F, 0xFF01, END} }, /* C, L. U？ R！ (COMP: shift lost on umbriel seat path) */
     {0},
 };
 
