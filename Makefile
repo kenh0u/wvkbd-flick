@@ -32,7 +32,7 @@ DOCS = wvkbd.1
 
 all: ${BIN} ${DOCS}
 
-$(BUILDDIR)/config.h:
+$(BUILDDIR)/config.h: config.$(LAYOUT).h
 	mkdir -p $(BUILDDIR)
 	cp config.$(LAYOUT).h $@
 

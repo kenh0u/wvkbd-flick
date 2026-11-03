@@ -1234,9 +1234,17 @@ main(int argc, char **argv)
         keyboard.schemes[1].bg.bgra[3] = bg_alpha_defined ? bg_alpha : alpha;
         keyboard.schemes[1].fg.bgra[3] = alpha;
         keyboard.schemes[1].high.bgra[3] = alpha;
+        if (countof(schemes) > 3) {
+            keyboard.schemes[3].bg.bgra[3] = bg_alpha_defined ? bg_alpha : alpha;
+            keyboard.schemes[3].fg.bgra[3] = alpha;
+            keyboard.schemes[3].high.bgra[3] = alpha;
+        }
     } else if (bg_alpha_defined) {
         keyboard.schemes[0].bg.bgra[3] = bg_alpha;
         keyboard.schemes[1].bg.bgra[3] = bg_alpha;
+        if (countof(schemes) > 3) {
+            keyboard.schemes[3].bg.bgra[3] = bg_alpha;
+        }
     }
     if (alpha_defined) {
         keyboard.schemes[2].bg.bgra[3] = alpha;

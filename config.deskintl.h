@@ -40,6 +40,18 @@ struct clr_scheme schemes[] = {
   .text = {.color = 0},
   .font = DEFAULT_FONT,
   .rounding = DEFAULT_ROUNDING,
+},
+/* scheme 3: Emoji face keys -- Sans 13 so 3-line emoji labels fit comfortably */
+{
+  .bg = {.bgra = {15, 15, 15, transparency}},
+  .fg = {.bgra = {45, 45, 45, transparency}},
+  .high = {.bgra = {100, 100, 100, transparency}},
+  .swipe = {.bgra = {100, 255, 100, 64}},
+  .text_press = {.color = UINT32_MAX},
+  .text_swipe = {.color = UINT32_MAX},
+  .text = {.color = UINT32_MAX},
+  .font = "Sans 13",
+  .rounding = DEFAULT_ROUNDING,
 }
 };
 

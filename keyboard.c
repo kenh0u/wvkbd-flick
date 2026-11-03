@@ -72,6 +72,26 @@ static const struct punct_entry kana_punct_table[] = {
     {0},
 };
 
+/* emoji (🙂) face: 10 flick cells, each cell has up to 5 emojis on C L U R D (UTF-8 strings) */
+struct emoji_entry {
+    const char *glyph;
+    const char *dirs[5]; /* C L U R D */
+};
+
+static const struct emoji_entry kana_emoji_table[] = {
+    { "😇\n🤣 😂 😋\n😌", { "😂", "🤣", "😇", "😋", "😌" } },
+    { "😩\n🥺 😭 😔", { "😭", "🥺", "😩", "😔", NULL } },
+    { "🤬\n😎 🤔 🤗\n😴", { "🤔", "😎", "🤬", "🤗", "😴" } },
+    { "🫩 🫡", { "🫡", "🫩", NULL, NULL, NULL } },
+    { "🤝\n👏 👍 👌", { "👍", "👏", "🤝", "👌", NULL } },
+    { "✊\n👊 ✌️ ✋\n🖕", { "✌️", "👊", "✊", "✋", "🖕" } },
+    { "👆\n👈 👆 👉\n👇", { "👆", "👈", "👆", "👉", "👇" } },
+    { "🙆‍♂️\n🙇‍♂️", { "🙇‍♂️", NULL, "🙆‍♂️", NULL, NULL } },
+    { "💖\n🩷 ❤️ 🩵\n💜", { "❤️", "🩷", "💖", "🩵", "💜" } },
+    { "💯\n🆗 🎉 🆖\n💢", { "🎉", "🆗", "💯", "🆖", "💢" } },
+    {0},
+};
+
 /* ---------------------------------------------------------------------------
  * Numeric (☆123) face. Same flick engine as the kana faces: label indexes
  * the table, release vector picks the direction. Unicode-only glyphs go
@@ -231,6 +251,39 @@ flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
                                 WL_KEYBOARD_KEY_STATE_RELEASED);
 }
 
+/* send a full UTF-8 string (including ZWJ emoji sequences) via COMP */
+static void
+flick_send_unicode_str(struct kbd *kb, uint32_t time, const char *str)
+{
+    if (!str || !*str)
+        return;
+    const unsigned char *s = (const unsigned char *)str;
+    while (*s) {
+        uint32_t cp = 0;
+        if (*s < 0x80) {
+            cp = *s++;
+        } else if ((*s & 0xe0) == 0xc0) {
+            cp = (*s++ & 0x1f) << 6;
+            cp |= (*s++ & 0x3f);
+        } else if ((*s & 0xf0) == 0xe0) {
+            cp = (*s++ & 0x0f) << 12;
+            cp |= (*s++ & 0x3f) << 6;
+            cp |= (*s++ & 0x3f);
+        } else if ((*s & 0xf8) == 0xf0) {
+            cp = (*s++ & 0x07) << 18;
+            cp |= (*s++ & 0x3f) << 12;
+            cp |= (*s++ & 0x3f) << 6;
+            cp |= (*s++ & 0x3f);
+        } else {
+            s++;
+            continue;
+        }
+        flick_send_unicode(kb, time, cp);
+        if (*s)
+            g_usleep(1000);
+    }
+}
+
 /* current layout id (kb->layout is a pointer into kb->layouts) */
 
 static void
@@ -316,6 +369,19 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
         } else {
             kbd_draw_key(kb, k, Unpress);
         }
+        return;
+    }
+    /* emoji cells: exact unicode through COMP/Copy path */
+    for (const struct emoji_entry *p = kana_emoji_table; p->glyph; p++) {
+        if (strcmp(p->glyph, k->label) != 0)
+            continue;
+        const char *em = p->dirs[dir];
+        if (kb->debug)
+            fprintf(stderr, "flick emoji: glyph='%s' dir=%d -> %s\n",
+                    k->label, dir, em ? em : "(none)");
+        if (em)
+            flick_send_unicode_str(kb, time, em);
+        kbd_draw_key(kb, k, Unpress);
         return;
     }
     const uint8_t *seq = flick_lookup(cur, k->label, dir, k->type == KanaGlySmall);

@@ -18,6 +18,7 @@ enum layout_id {
 	KanaSmall,
 	KanaNum,
 	KanaAbc,
+	KanaEmoji,
 	Cyrillic,
 	ComposeA,
 	ComposeE,
@@ -63,7 +64,7 @@ enum layout_id {
 
 static struct key keys_full[], keys_special[], keys_kana_flick[],
   keys_kana_dakuten[], keys_kana_handakuten[], keys_kana_small[],
-  keys_kana_num[], keys_kana_abc[],
+  keys_kana_num[], keys_kana_abc[], keys_kana_emoji[],
   keys_cyrillic[],
   keys_compose_a[],
   keys_compose_e[], keys_compose_y[], keys_compose_u[], keys_compose_i[],
@@ -94,6 +95,7 @@ static struct layout layouts[NumLayouts] = {
   [KanaSmall] = {keys_kana_small, "latin", "kana_small", false},
   [KanaNum] = {keys_kana_num, "latin", "kana_num", false},
   [KanaAbc] = {keys_kana_abc, "latin", "kana_abc", false},
+  [KanaEmoji] = {keys_kana_emoji, "latin", "kana_emoji", false},
   [Cyrillic] = {keys_cyrillic, "cyrillic", "cyrillic", true},
   [ComposeA] = {keys_compose_a, "latin"},
   [ComposeE] = {keys_compose_e, "latin"},
@@ -334,7 +336,7 @@ static struct key keys_kana_flick[] = {
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"🙂", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaEmoji], .scheme = 1},
   {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"た", "", 1.0, KanaGly, .scheme = 0},
   {"な", "", 1.0, KanaGly, .scheme = 0},
@@ -375,7 +377,7 @@ static struct key keys_kana_num[] = {
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"🙂", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaEmoji], .scheme = 1},
   {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"↑\n← 4 →\n↓", "", 1.0, KanaGly, .scheme = 0},
   {"+\n✕ 5 ÷\n×", "", 1.0, KanaGly, .scheme = 0},
@@ -413,7 +415,7 @@ static struct key keys_kana_abc[] = {
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"🙂", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaEmoji], .scheme = 1},
   {"ABC", "", 1.0, KanaNoop, .scheme = 1},
   {"ghi", "GHI", 1.0, KanaGly, .scheme = 0},
   {"jkl", "JKL", 1.0, KanaGly, .scheme = 0},
@@ -440,6 +442,45 @@ static struct key keys_kana_abc[] = {
   {"", "", 0.0, Last},
 };
 
+/* Emoji (🙂) face: 10 emoji flick cells in columns 2-4.
+ * Row 3 col 3 and col 4 are empty Pad cells reserved for future additions.
+ * Same frame as the other flick faces. */
+static struct key keys_kana_emoji[] = {
+  {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
+  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
+  {"😇\n🤣 😂 😋\n😌", "", 1.0, KanaGly, .scheme = 3},
+  {"😩\n🥺 😭 😔", "", 1.0, KanaGly, .scheme = 3},
+  {"🤬\n😎 🤔 🤗\n😴", "", 1.0, KanaGly, .scheme = 3},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
+  {"🫩 🫡", "", 1.0, KanaGly, .scheme = 3},
+  {"🤝\n👏 👍 👌", "", 1.0, KanaGly, .scheme = 3},
+  {"✊\n👊 ✌️ ✋\n🖕", "", 1.0, KanaGly, .scheme = 3},
+  {"空白", "", 1.0, Code, KEY_SPACE},
+  {"", "", 0.0, EndRow},
+
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"あいう", "", 1.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"👆\n👈 👆 👉\n👇", "", 1.0, KanaGly, .scheme = 3},
+  {"🙆‍♂️\n🙇‍♂️", "", 1.0, KanaGly, .scheme = 3},
+  {"💖\n🩷 ❤️ 🩵\n💜", "", 1.0, KanaGly, .scheme = 3},
+  {"Enter", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"💯\n🆗 🎉 🆖\n💢", "", 1.0, KanaGly, .scheme = 3},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+
+  /* end of layout */
+  {"", "", 0.0, Last},
+};
+
 /* One-shot modifier layers. INVARIANT: the grid is cell-for-cell identical
  * to keys_kana_flick — same glyph column belongs to the same row and
  * direction. Only the modified column HEAD changes: a cell whose kana has a
@@ -457,7 +498,7 @@ static struct key keys_kana_dakuten[] = {
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"🙂", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaEmoji], .scheme = 1},
   {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"だ", "", 1.0, KanaGlyMut, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
@@ -494,7 +535,7 @@ static struct key keys_kana_handakuten[] = {
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"🙂", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaEmoji], .scheme = 1},
   {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
@@ -533,7 +574,7 @@ static struct key keys_kana_small[] = {
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"🙂", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaEmoji], .scheme = 1},
   {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"っ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
