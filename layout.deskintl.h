@@ -344,7 +344,7 @@ static struct key keys_kana_flick[] = {
   {"空白", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 1},
   {"あいう", "", 1.0, KanaAnchor, 0, &layouts[KanaFlick], .scheme = 0},
   {"ま", "", 1.0, KanaGly, .scheme = 0},
   {"や", "", 1.0, KanaGly, .scheme = 0},
@@ -353,8 +353,8 @@ static struct key keys_kana_flick[] = {
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
-  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
-  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
+  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 1},
+  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 1},
   {"わ", "", 1.0, KanaGly, .scheme = 0},
   {"、。!?", "", 1.0, KanaGly, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
@@ -370,7 +370,7 @@ static struct key keys_kana_flick[] = {
  * also send KEY_MUHENKAN (IME off). */
 static struct key keys_kana_num[] = {
   {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
-  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
+  {"☆123", "", 1.0, KanaNoop, .scheme = 0},
   {"~\n` 1 !\n@", "", 1.0, KanaGly, .scheme = 0},
   {"$\n# 2 %\n^", "", 1.0, KanaGly, .scheme = 0},
   {"&\n* 3 -\n=", "", 1.0, KanaGly, .scheme = 0},
@@ -416,7 +416,7 @@ static struct key keys_kana_abc[] = {
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaEmoji], .scheme = 1},
-  {"ABC", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaNoop, .scheme = 0},
   {"ghi", "GHI", 1.0, KanaGly, .scheme = 0},
   {"jkl", "JKL", 1.0, KanaGly, .scheme = 0},
   {"mno", "MNO", 1.0, KanaGly, .scheme = 0},
@@ -454,7 +454,7 @@ static struct key keys_kana_emoji[] = {
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
-  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"🙂", "", 1.0, KanaNoop, .scheme = 0},
   {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"🫩 🫡", "", 1.0, KanaGly, .scheme = 3},
   {"🤝\n👏 👍 👌", "", 1.0, KanaGly, .scheme = 3},
@@ -506,8 +506,8 @@ static struct key keys_kana_dakuten[] = {
   {"空白", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
-  {"あいう", "", 1.0, KanaAnchor, 0, &layouts[KanaFlick], .scheme = 0},
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 1},
+  {"あいう", "", 1.0, KanaAnchor, 0, &layouts[KanaFlick], .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
@@ -515,7 +515,7 @@ static struct key keys_kana_dakuten[] = {
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
-  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
+  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 1},
   {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, Pad, .scheme = 1},
@@ -544,7 +544,7 @@ static struct key keys_kana_handakuten[] = {
   {"", "", 0.0, EndRow},
 
   {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
-  {"あいう", "", 1.0, KanaAnchor, 0, &layouts[KanaFlick], .scheme = 0},
+  {"あいう", "", 1.0, KanaAnchor, 0, &layouts[KanaFlick], .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
@@ -552,8 +552,8 @@ static struct key keys_kana_handakuten[] = {
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
-  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
-  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
+  {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 1},
+  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
@@ -582,8 +582,8 @@ static struct key keys_kana_small[] = {
   {"空白", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 0},
-  {"あいう", "", 1.0, KanaAnchor, 0, &layouts[KanaFlick], .scheme = 0},
+  {"゜", "", 1.0, KanaMod, 0, &layouts[KanaHandakuten], .scheme = 1},
+  {"あいう", "", 1.0, KanaAnchor, 0, &layouts[KanaFlick], .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"ゃ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
@@ -592,7 +592,7 @@ static struct key keys_kana_small[] = {
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
   {"小", "", 1.0, KanaMod, 0, &layouts[KanaSmall], .scheme = 0},
-  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
+  {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 1},
   {"ゎ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
