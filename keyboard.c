@@ -1,6 +1,7 @@
 #include "proto/virtual-keyboard-unstable-v1-client-protocol.h"
 #include <linux/input-event-codes.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/mman.h>
@@ -92,18 +93,18 @@ static const struct punct_entry kana_punct_table[] = {
  * umbriel's physical-keymap fold and the client); only unshifted ASCII
  * (digits, - = ; ' , . /) stay as plain scancodes. */
 static const struct flick_entry kana_num_table[] = {
-    { "1", { C(KEY_1), UC('`'), UC('~'), UC(0xFF01), UC('@') } }, /* R fullwidth-bang: ASCII 0x21 gets swallowed by mozc/ghostty IME path */
-    { "2", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
-    { "3", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
-    { "4", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
-    { "5", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
-    { "6", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
-    { "7", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
-    { "8", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
-    { "9", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
-    { "(", { UC('('), UC(')'), UC('['), UC(']'), END } },
-    { "0", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
-    { ".", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
+    { "1`~!@", { C(KEY_1), UC('`'), UC('~'), UC('!'), UC('@') } },
+    { "2#$%^", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
+    { "3&*-=", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
+    { "4←↑→↓", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
+    { "5+✕÷×", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
+    { "6{}|\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
+    { "7「」：☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
+    { "8〒々〆○", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
+    { "9;:'\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
+    { "()[]", { UC('('), UC(')'), UC('['), UC(']'), END } },
+    { "0〜…・", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
+    { ".,-/", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
     {0},
 };
 
@@ -112,7 +113,7 @@ static const struct flick_entry kana_num_table[] = {
  * directions). Punctuation cells per the user's row 4:
  *  ': L=' U:" R:( D:)   .: L:? U:! R:, D:-  (Shift cells are layout keys) */
 static const struct flick_entry kana_abc_table[] = {
-    { "@#/", { UC('@'), UC('#'), UC('/'), UC('&'), UC('_') } },
+    { "@#/&_", { UC('@'), UC('#'), UC('/'), UC('&'), UC('_') } },
     { "abc", { C(KEY_A), C(KEY_B), C(KEY_C), END, END } },
     { "def", { C(KEY_D), C(KEY_E), C(KEY_F), END, END } },
     { "ghi", { C(KEY_G), C(KEY_H), C(KEY_I), END, END } },
@@ -121,8 +122,8 @@ static const struct flick_entry kana_abc_table[] = {
     { "pqrs", { C(KEY_P), C(KEY_Q), C(KEY_R), C(KEY_S), END } },
     { "tuv", { C(KEY_T), C(KEY_U), C(KEY_V), END, END } },
     { "wxyz", { C(KEY_W), C(KEY_X), C(KEY_Y), C(KEY_Z), END } },
-    { "'\"()", { C(KEY_APOSTROPHE), UC('"'), UC('('), UC(')'), UC(',') } },
-    { ".", { C(KEY_DOT), C(KEY_COMMA), UC(0xFF1F), UC(0xFF01), END } },
+    { "'\"(),", { C(KEY_APOSTROPHE), UC('"'), UC('('), UC(')'), UC(',') } },
+    { ".?!", { C(KEY_DOT), C(KEY_COMMA), UC('?'), UC('!'), END } },
     {0},
 };
 
@@ -321,8 +322,32 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
         }
         fprintf(stderr, "\n");
     }
-    if (seq)
+    /* ABC Shift latch: uppercase the letters (via COMP unicode - the SH
+     * wrap is lost between umbriel's physical-keymap fold and the client),
+     * everything else unchanged. The latch consumes on emit. */
+    bool abc_shift = (cur == KanaAbc) && (kb->mods & Shift);
+    if (seq && abc_shift) {
+        bool any_letter = false;
+        for (const uint8_t *p = seq; *p; p++) {
+            if (*p == FLICK_UC) {
+                p += 2;
+                continue;
+            }
+            if (*p >= KEY_A && *p <= KEY_Z) {
+                flick_send_unicode(kb, time, 'A' + (*p - KEY_A));
+                any_letter = true;
+            } else {
+                flick_send_key(kb, time, *p);
+            }
+        }
+        if (any_letter)
+            kb->mods &= ~Shift; /* one-shot consume */
+        kbd_draw_key(kb, k, Unpress);
+        return;
+    }
+    if (seq) {
         flick_send_seq(kb, time, seq);
+    }
     /* one-shot consumed: fall back to the plain flick layer */
     if (cur == KanaDakuten || cur == KanaHandakuten || cur == KanaSmall) {
         kbd_switch_layout(kb, &kb->layouts[KanaFlick],
