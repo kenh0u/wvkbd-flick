@@ -430,10 +430,10 @@ static struct key keys_kana_abc[] = {
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
   {"⇧", "", 1.0, Mod, Shift, .scheme = 1},
   {"'\"()", "", 1.0, KanaGly, .scheme = 0},
   {".", "", 1.0, KanaGly, .scheme = 0},
-  {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
 
   /* end of layout */
