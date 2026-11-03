@@ -93,18 +93,18 @@ static const struct punct_entry kana_punct_table[] = {
  * umbriel's physical-keymap fold and the client); only unshifted ASCII
  * (digits, - = ; ' , . /) stay as plain scancodes. */
 static const struct flick_entry kana_num_table[] = {
-    { "1`~!@", { C(KEY_1), UC('`'), UC('~'), UC('!'), UC('@') } },
-    { "2#$%^", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
-    { "3&*-=", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
-    { "↑\n←4→\n↓", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
-    { "5+✕÷×", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
-    { "6{}|\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
-    { "7「」：☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
-    { "8〒々〆○", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
-    { "9;:'\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
-    { "()[]", { UC('('), UC(')'), UC('['), UC(']'), END } },
-    { "0〜…・", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
-    { ".,-/", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
+    { "1\n`~!@", { C(KEY_1), UC('`'), UC('~'), UC('!'), UC('@') } },
+    { "2\n#$%^", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
+    { "3\n&*-=", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
+    { "4\n←↑→↓", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
+    { "5\n+✕÷×", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
+    { "6\n{}|\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
+    { "7\n「」：☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
+    { "8\n〒々〆○", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
+    { "9\n;:'\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
+    { "(\n)[]", { UC('('), UC(')'), UC('['), UC(']'), END } },
+    { "0\n〜…・", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
+    { ".\n,-/", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
     {0},
 };
 
@@ -122,7 +122,7 @@ static const struct flick_entry kana_abc_table[] = {
     { "pqrs", { C(KEY_P), C(KEY_Q), C(KEY_R), C(KEY_S), END } },
     { "tuv", { C(KEY_T), C(KEY_U), C(KEY_V), END, END } },
     { "wxyz", { C(KEY_W), C(KEY_X), C(KEY_Y), C(KEY_Z), END } },
-    { "'\"(),", { C(KEY_APOSTROPHE), UC('"'), UC('('), UC(')'), UC(',') } },
+    { "'\"()", { C(KEY_APOSTROPHE), UC('"'), UC('('), UC(')'), UC(',') } },
     { ".,?!", { C(KEY_DOT), C(KEY_COMMA), UC('?'), UC('!'), END } },
     {0},
 };
@@ -343,6 +343,9 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
         if (any_letter)
             kb->mods &= ~Shift; /* one-shot consume */
         kbd_draw_key(kb, k, Unpress);
+        /* the latch (and thus the ⇧ highlight) changed state: repaint so
+         * the key colors match the actual modifier state */
+        kbd_draw_layout(kb);
         return;
     }
     if (seq) {
