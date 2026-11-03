@@ -144,7 +144,9 @@ drw_draw_text(struct drwsurf *ds, Color color, uint32_t x, uint32_t y,
 
     pango_layout_set_text(d->layout, label, -1);
     pango_layout_set_width(d->layout, (w - (b * 2)) * PANGO_SCALE);
-    pango_layout_set_height(d->layout, (h - (b * 2)) * PANGO_SCALE);
+    /* multi-line labels (numeric face): don't cap the height or the 3rd
+     * line gets clipped; centering uses the measured size below */
+    pango_layout_set_height(d->layout, -1);
 
     int width, height;
     pango_layout_get_pixel_size(d->layout, &width, &height);
