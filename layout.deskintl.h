@@ -392,10 +392,10 @@ static struct key keys_kana_num[] = {
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
   {"(", "", 1.0, KanaGly, .scheme = 0},
   {"0", "", 1.0, KanaGly, .scheme = 0},
   {".", "", 1.0, KanaGly, .scheme = 0},
-  {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
 
   /* end of layout */
@@ -407,31 +407,32 @@ static struct key keys_kana_num[] = {
 static struct key keys_kana_abc[] = {
   {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
   {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
-  {"@abc", "", 1.0, KanaGly, .scheme = 0},
+  {"@#/", "", 1.0, KanaGly, .scheme = 0},
+  {"abc", "", 1.0, KanaGly, .scheme = 0},
   {"def", "", 1.0, KanaGly, .scheme = 0},
-  {"ghi", "", 1.0, KanaGly, .scheme = 0},
   {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
-  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
+  {"ABC", "", 1.0, KanaNoop, .scheme = 1},
+  {"ghi", "", 1.0, KanaGly, .scheme = 0},
   {"jkl", "", 1.0, KanaGly, .scheme = 0},
   {"mno", "", 1.0, KanaGly, .scheme = 0},
-  {"pqrs", "", 1.0, KanaGly, .scheme = 0},
   {"空白", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
   {"゜", "", 1.0, Pad, .scheme = 1},
   {"あいう", "", 1.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"pqrs", "", 1.0, KanaGly, .scheme = 0},
   {"tuv", "", 1.0, KanaGly, .scheme = 0},
   {"wxyz", "", 1.0, KanaGly, .scheme = 0},
-  {"", "", 1.0, Pad, .scheme = 1},
   {"Enter", "", 1.0, Code, KEY_ENTER, .scheme = 1},
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
+  {"⇧", "", 1.0, Mod, Shift, .scheme = 1},
   {"'\"()", "", 1.0, KanaGly, .scheme = 0},
-  {".?!", "", 1.0, KanaGly, .scheme = 0},
+  {".", "", 1.0, KanaGly, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
 

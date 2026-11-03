@@ -50,7 +50,7 @@ static const struct flick_entry kana_flick_table[] = {
     { "な", { {KEY_N, KEY_A}, {KEY_N, KEY_I}, {KEY_N, KEY_U}, {KEY_N, KEY_E}, {KEY_N, KEY_O} } },
     { "は", { {KEY_H, KEY_A}, {KEY_H, KEY_I}, {KEY_H, KEY_U}, {KEY_H, KEY_E}, {KEY_H, KEY_O} } },
     { "ま", { {KEY_M, KEY_A}, {KEY_M, KEY_I}, {KEY_M, KEY_U}, {KEY_M, KEY_E}, {KEY_M, KEY_O} } },
-    { "や", { {KEY_Y, KEY_A}, END, {KEY_Y, KEY_U}, END, {KEY_Y, KEY_O} } },
+    { "や", { {KEY_Y, KEY_A}, {END}, {KEY_Y, KEY_U}, {END}, {KEY_Y, KEY_O} } },
     { "ら", { {KEY_R, KEY_A}, {KEY_R, KEY_I}, {KEY_R, KEY_U}, {KEY_R, KEY_E}, {KEY_R, KEY_O} } },
     { "わ", { {KEY_W, KEY_A}, {KEY_W, KEY_O}, {KEY_N, KEY_N}, {KEY_MINUS}, END } },
     /* punctuation cell: plain ASCII , . ? ! (evdev 242-245, dedicated XKB
@@ -101,9 +101,9 @@ static const struct flick_entry kana_num_table[] = {
     { "7", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
     { "8", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
     { "9", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
-    { "(", { C(KEY_9), C(KEY_0), UC('['), UC(']'), END } },
+    { "(", { UC('('), UC(')'), UC('['), UC(']'), END } },
     { "0", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
-    { ".", { C(KEY_DOT), C(KEY_MINUS), C(KEY_SLASH), END, END } },
+    { ".", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
     {0},
 };
 
@@ -112,7 +112,8 @@ static const struct flick_entry kana_num_table[] = {
  * directions). Punctuation cells per the user's row 4:
  *  ': L=' U:" R:( D:)   .: L:? U:! R:, D:-  (Shift cells are layout keys) */
 static const struct flick_entry kana_abc_table[] = {
-    { "@abc", { C(KEY_A), C(KEY_B), C(KEY_C), END, END } },
+    { "@#/", { UC('@'), UC('#'), UC('/'), UC('&'), UC('_') } },
+    { "abc", { C(KEY_A), C(KEY_B), C(KEY_C), END, END } },
     { "def", { C(KEY_D), C(KEY_E), C(KEY_F), END, END } },
     { "ghi", { C(KEY_G), C(KEY_H), C(KEY_I), END, END } },
     { "jkl", { C(KEY_J), C(KEY_K), C(KEY_L), END, END } },
@@ -120,8 +121,8 @@ static const struct flick_entry kana_abc_table[] = {
     { "pqrs", { C(KEY_P), C(KEY_Q), C(KEY_R), C(KEY_S), END } },
     { "tuv", { C(KEY_T), C(KEY_U), C(KEY_V), END, END } },
     { "wxyz", { C(KEY_W), C(KEY_X), C(KEY_Y), C(KEY_Z), END } },
-    { "'\"()", { C(KEY_APOSTROPHE), UC('"'), UC('('), {UC(')')}, END } },
-    { ".?!", { C(KEY_DOT), UC(0xFF1F), UC(0xFF01), C(KEY_COMMA), C(KEY_MINUS) } }, /* fullwidth ?! same IME reason */
+    { "'\"()", { C(KEY_APOSTROPHE), UC('"'), UC('('), UC(')'), UC(',') } },
+    { ".", { C(KEY_DOT), C(KEY_COMMA), UC(0xFF1F), UC(0xFF01), END } },
     {0},
 };
 
@@ -149,8 +150,8 @@ static const struct flick_entry kana_handakuten_table[] = {
 static const struct flick_entry kana_small_table[] = {
     { "ぁ", { {KEY_X, KEY_A}, {KEY_X, KEY_I}, {KEY_X, KEY_U}, {KEY_X, KEY_E}, {KEY_X, KEY_O} } },
     { "っ", { {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U} } },
-    { "ゃ", { {KEY_X, KEY_Y, KEY_A}, END, {KEY_X, KEY_Y, KEY_U}, END, {KEY_X, KEY_Y, KEY_O} } },
-    { "ゎ", { {KEY_X, KEY_W, KEY_A}, END, END, END, END } },
+    { "ゃ", { {KEY_X, KEY_Y, KEY_A}, {END}, {KEY_X, KEY_Y, KEY_U}, {END}, {KEY_X, KEY_Y, KEY_O} } },
+    { "ゎ", { {KEY_X, KEY_W, KEY_A}, {END}, {END}, {END}, {END} } },
     {0},
 };
 
