@@ -16,6 +16,8 @@ enum layout_id {
 	KanaDakuten,
 	KanaHandakuten,
 	KanaSmall,
+	KanaNum,
+	KanaAbc,
 	Cyrillic,
 	ComposeA,
 	ComposeE,
@@ -61,6 +63,7 @@ enum layout_id {
 
 static struct key keys_full[], keys_special[], keys_kana_flick[],
   keys_kana_dakuten[], keys_kana_handakuten[], keys_kana_small[],
+  keys_kana_num[], keys_kana_abc[],
   keys_cyrillic[],
   keys_compose_a[],
   keys_compose_e[], keys_compose_y[], keys_compose_u[], keys_compose_i[],
@@ -89,6 +92,8 @@ static struct layout layouts[NumLayouts] = {
   [KanaDakuten] = {keys_kana_dakuten, "latin", "kana_dakuten", false},
   [KanaHandakuten] = {keys_kana_handakuten, "latin", "kana_handakuten", false},
   [KanaSmall] = {keys_kana_small, "latin", "kana_small", false},
+  [KanaNum] = {keys_kana_num, "latin", "kana_num", false},
+  [KanaAbc] = {keys_kana_abc, "latin", "kana_abc", false},
   [Cyrillic] = {keys_cyrillic, "cyrillic", "cyrillic", true},
   [ComposeA] = {keys_compose_a, "latin"},
   [ComposeE] = {keys_compose_e, "latin"},
@@ -322,7 +327,7 @@ static struct key keys_special[] = {
 
 static struct key keys_kana_flick[] = {
   {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
-  {"☆123", "", 1.0, KanaNoop, .scheme = 1},
+  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
   {"あ", "", 1.0, KanaGly, .scheme = 0},
   {"か", "", 1.0, KanaGly, .scheme = 0},
   {"さ", "", 1.0, KanaGly, .scheme = 0},
@@ -330,7 +335,7 @@ static struct key keys_kana_flick[] = {
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
-  {"ABC", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"た", "", 1.0, KanaGly, .scheme = 0},
   {"な", "", 1.0, KanaGly, .scheme = 0},
   {"は", "", 1.0, KanaGly, .scheme = 0},
@@ -350,6 +355,84 @@ static struct key keys_kana_flick[] = {
   {"゛", "", 1.0, KanaMod, 0, &layouts[KanaDakuten], .scheme = 0},
   {"わ", "", 1.0, KanaGly, .scheme = 0},
   {"、。!?", "", 1.0, KanaGly, .scheme = 0},
+  {"", "", 1.0, Pad, .scheme = 1},
+
+  /* end of layout */
+  {"", "", 0.0, Last},
+};
+
+/* Numeric (☆123) face: dial-pad 1..9 + ( 0 . in columns 2-4, same 4x6
+ * frame as the kana flick face. The ☆123 cell marks the current face
+ * (noop); ABC returns to the kana face; あいう re-enters the kana face
+ * with IME ON (KanaOn). ☆123/ABC on THIS face are KanaMod switches that
+ * also send KEY_MUHENKAN (IME off). */
+static struct key keys_kana_num[] = {
+  {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
+  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
+  {"1", "", 1.0, KanaGly, .scheme = 0},
+  {"2", "", 1.0, KanaGly, .scheme = 0},
+  {"3", "", 1.0, KanaGly, .scheme = 0},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
+  {"4", "", 1.0, KanaGly, .scheme = 0},
+  {"5", "", 1.0, KanaGly, .scheme = 0},
+  {"6", "", 1.0, KanaGly, .scheme = 0},
+  {"空白", "", 1.0, Code, KEY_SPACE},
+  {"", "", 0.0, EndRow},
+
+  {"゜", "", 1.0, Pad, .scheme = 1},
+  {"あいう", "", 1.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"7", "", 1.0, KanaGly, .scheme = 0},
+  {"8", "", 1.0, KanaGly, .scheme = 0},
+  {"9", "", 1.0, KanaGly, .scheme = 0},
+  {"Enter", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
+  {"(", "", 1.0, KanaGly, .scheme = 0},
+  {"0", "", 1.0, KanaGly, .scheme = 0},
+  {".", "", 1.0, KanaGly, .scheme = 0},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
+
+  /* end of layout */
+  {"", "", 0.0, Last},
+};
+
+/* Alphabetic (ABC) face: T9 letter groups in columns 2-4, ' and . cells in
+ * row 4. Same switch semantics as the numeric face. */
+static struct key keys_kana_abc[] = {
+  {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
+  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
+  {"@abc", "", 1.0, KanaGly, .scheme = 0},
+  {"def", "", 1.0, KanaGly, .scheme = 0},
+  {"ghi", "", 1.0, KanaGly, .scheme = 0},
+  {"⌫", "", 1.0, Code, KEY_BACKSPACE, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"🙂", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
+  {"jkl", "", 1.0, KanaGly, .scheme = 0},
+  {"mno", "", 1.0, KanaGly, .scheme = 0},
+  {"pqrs", "", 1.0, KanaGly, .scheme = 0},
+  {"空白", "", 1.0, Code, KEY_SPACE},
+  {"", "", 0.0, EndRow},
+
+  {"゜", "", 1.0, Pad, .scheme = 1},
+  {"あいう", "", 1.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
+  {"tuv", "", 1.0, KanaGly, .scheme = 0},
+  {"wxyz", "", 1.0, KanaGly, .scheme = 0},
+  {"", "", 1.0, Pad, .scheme = 1},
+  {"Enter", "", 1.0, Code, KEY_ENTER, .scheme = 1},
+  {"", "", 0.0, EndRow},
+
+  {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
+  {"'\"()", "", 1.0, KanaGly, .scheme = 0},
+  {".?!", "", 1.0, KanaGly, .scheme = 0},
+  {"", "", 1.0, Pad, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
 
   /* end of layout */

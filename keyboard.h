@@ -209,5 +209,6 @@ int64_t monotime();
 #ifndef LAYOUT
 #error "make sure to define LAYOUT"
 #endif
+#include <linux/input-event-codes.h> /* layout headers use KEY_* scancodes */
 #include LAYOUT
 #endif

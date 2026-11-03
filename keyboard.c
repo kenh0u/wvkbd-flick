@@ -50,9 +50,9 @@ static const struct flick_entry kana_flick_table[] = {
     { "な", { {KEY_N, KEY_A}, {KEY_N, KEY_I}, {KEY_N, KEY_U}, {KEY_N, KEY_E}, {KEY_N, KEY_O} } },
     { "は", { {KEY_H, KEY_A}, {KEY_H, KEY_I}, {KEY_H, KEY_U}, {KEY_H, KEY_E}, {KEY_H, KEY_O} } },
     { "ま", { {KEY_M, KEY_A}, {KEY_M, KEY_I}, {KEY_M, KEY_U}, {KEY_M, KEY_E}, {KEY_M, KEY_O} } },
-    { "や", { {KEY_Y, KEY_A}, {END}, {KEY_Y, KEY_U}, {END}, {KEY_Y, KEY_O} } },
+    { "や", { {KEY_Y, KEY_A}, END, {KEY_Y, KEY_U}, END, {KEY_Y, KEY_O} } },
     { "ら", { {KEY_R, KEY_A}, {KEY_R, KEY_I}, {KEY_R, KEY_U}, {KEY_R, KEY_E}, {KEY_R, KEY_O} } },
-    { "わ", { {KEY_W, KEY_A}, {KEY_W, KEY_O}, {KEY_N, KEY_N}, {KEY_MINUS}, {END} } },
+    { "わ", { {KEY_W, KEY_A}, {KEY_W, KEY_O}, {KEY_N, KEY_N}, {KEY_MINUS}, END } },
     /* punctuation cell: plain ASCII , . ? ! (evdev 242-245, dedicated XKB
      * keys). fcitx5-mozc's romaji map turns , . into 、。 and passes
      * ? ! straight through; the old SH+SLASH / SH+1 wraps lost the shift
@@ -68,6 +68,60 @@ struct punct_entry {
 };
 static const struct punct_entry kana_punct_table[] = {
     { "、。!?", {KEY_COMMA, KEY_DOT, 0xFF1F, 0xFF01, END} }, /* C, L. U？ R！ (COMP: shift lost on umbriel seat path) */
+    {0},
+};
+
+/* ---------------------------------------------------------------------------
+ * Numeric (☆123) face. Same flick engine as the kana faces: label indexes
+ * the table, release vector picks the direction. Unicode-only glyphs go
+ * through the COMP/Copy path with the FLICK_UC marker in the sequence.
+ * ------------------------------------------------------------------------- */
+#define C(c) {c}
+#define S(k) ((k) | SH) /* shift-wrapped scancode (shifted symbol on that key) */
+#define FLICK_UC 0x01 /* flick-seq marker: next 4 bytes = UCS-4 codepoint */
+#define UC(cp) {FLICK_UC, ((cp) & 0xFF), (((cp) >> 8) & 0xFF), 0} /* marker + 16-bit codepoint (LE) */
+
+/* Numeric (☆123) face, per user spec (each cell = head + 4 symbols on
+ * L/U/R/D, 中左上右下):
+ *  1: L:` U:~ R:! D:@   2: L:# U:$ R:% D:^   3: L:& U:* R:- D:=
+ *  4: L:← U:↑ R:→ D:↓   5: L:+ U:✕ R:÷ D:×   6: L:{ U:} R:| D:\
+ *  7: L:「 U:」 R:： D:☆  8: L:〒 U:々 R:〆 D:○  9: L:; U:: R:' D:"
+ *  (: L:) U:[ R:]       0: L:〜 U:… R:・      .: L:- U:/
+ * ( 0 . are the three heads of row 4. EVERY symbol that needs Shift on the
+ * US layout goes through the COMP path (the shift wrap is lost between
+ * umbriel's physical-keymap fold and the client); only unshifted ASCII
+ * (digits, - = ; ' , . /) stay as plain scancodes. */
+static const struct flick_entry kana_num_table[] = {
+    { "1", { C(KEY_1), UC('`'), UC('~'), UC(0xFF01), UC('@') } }, /* R fullwidth-bang: ASCII 0x21 gets swallowed by mozc/ghostty IME path */
+    { "2", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
+    { "3", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
+    { "4", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
+    { "5", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
+    { "6", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
+    { "7", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
+    { "8", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
+    { "9", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
+    { "(", { C(KEY_9), C(KEY_0), UC('['), UC(']'), END } },
+    { "0", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
+    { ".", { C(KEY_DOT), C(KEY_MINUS), C(KEY_SLASH), END, END } },
+    {0},
+};
+
+/* Alphabetic (ABC) face, T9-style: head letter + the rest of the letter
+ * group across L/U/R/D (C=a L=b U=c for "abc"; pqrs and wxyz use all four
+ * directions). Punctuation cells per the user's row 4:
+ *  ': L=' U:" R:( D:)   .: L:? U:! R:, D:-  (Shift cells are layout keys) */
+static const struct flick_entry kana_abc_table[] = {
+    { "@abc", { C(KEY_A), C(KEY_B), C(KEY_C), END, END } },
+    { "def", { C(KEY_D), C(KEY_E), C(KEY_F), END, END } },
+    { "ghi", { C(KEY_G), C(KEY_H), C(KEY_I), END, END } },
+    { "jkl", { C(KEY_J), C(KEY_K), C(KEY_L), END, END } },
+    { "mno", { C(KEY_M), C(KEY_N), C(KEY_O), END, END } },
+    { "pqrs", { C(KEY_P), C(KEY_Q), C(KEY_R), C(KEY_S), END } },
+    { "tuv", { C(KEY_T), C(KEY_U), C(KEY_V), END, END } },
+    { "wxyz", { C(KEY_W), C(KEY_X), C(KEY_Y), C(KEY_Z), END } },
+    { "'\"()", { C(KEY_APOSTROPHE), UC('"'), UC('('), {UC(')')}, END } },
+    { ".?!", { C(KEY_DOT), UC(0xFF1F), UC(0xFF01), C(KEY_COMMA), C(KEY_MINUS) } }, /* fullwidth ?! same IME reason */
     {0},
 };
 
@@ -95,8 +149,8 @@ static const struct flick_entry kana_handakuten_table[] = {
 static const struct flick_entry kana_small_table[] = {
     { "ぁ", { {KEY_X, KEY_A}, {KEY_X, KEY_I}, {KEY_X, KEY_U}, {KEY_X, KEY_E}, {KEY_X, KEY_O} } },
     { "っ", { {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U}, {KEY_X, KEY_T, KEY_U} } },
-    { "ゃ", { {KEY_X, KEY_Y, KEY_A}, {END}, {KEY_X, KEY_Y, KEY_U}, {END}, {KEY_X, KEY_Y, KEY_O} } },
-    { "ゎ", { {KEY_X, KEY_W, KEY_A}, {END}, {END}, {END}, {END} } },
+    { "ゃ", { {KEY_X, KEY_Y, KEY_A}, END, {KEY_X, KEY_Y, KEY_U}, END, {KEY_X, KEY_Y, KEY_O} } },
+    { "ゎ", { {KEY_X, KEY_W, KEY_A}, END, END, END, END } },
     {0},
 };
 
@@ -125,6 +179,10 @@ flick_lookup(enum layout_id cur, const char *glyph, enum flick_dir dir,
         t = kana_handakuten_table;
     else if (cur == KanaSmall)
         t = kana_small_table;
+    else if (cur == KanaNum)
+        t = kana_num_table;
+    else if (cur == KanaAbc)
+        t = kana_abc_table;
     /* One-shot modifier (dakuten/handakuten/small) layers mirror the plain
      * grid: KanaGlyMut/KanaGlySmall carry the modified column head, but the
      * flick LOOKUP is by the plain head the same cell has on KanaFlick, so
@@ -150,6 +208,28 @@ kana_flick_dir(int32_t dx, int32_t dy)
     else
         return dy > 0 ? FLICK_D : FLICK_U;
 }
+
+/* 0x01 marker in a flick sequence: the next 4 bytes (little-endian, 0-
+ * terminated short) are a UCS-4 codepoint delivered via the Copy mechanism
+ * (temp keymap + COMP key, keycode 135). Clients resolve key events with
+ * the PHYSICAL keyboard's keymap on this compositor, so custom XKB levels
+ * for evdev 242-245 came out as XF86 keys; raw `shift + slash/1` wraps
+ * lose the shift and reached mozc as `/` and `1`. Sending the final
+ * keysym through the COMP path bypasses both problems. */
+static void
+flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
+{
+    if (kb->debug)
+        fprintf(stderr, "unicode: %04x via COMP\n", uc);
+    create_and_upload_keymap(kb, kb->layout->keymap_name, uc);
+    zwp_virtual_keyboard_v1_modifiers(kb->vkbd, 0, 0, 0, 0);
+    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127, /* COMP key */
+                                WL_KEYBOARD_KEY_STATE_PRESSED);
+    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127,
+                                WL_KEYBOARD_KEY_STATE_RELEASED);
+}
+
+/* current layout id (kb->layout is a pointer into kb->layouts) */
 
 static void
 flick_send_key(struct kbd *kb, uint32_t time, uint8_t sc)
@@ -177,29 +257,19 @@ flick_send_key(struct kbd *kb, uint32_t time, uint8_t sc)
 static void
 flick_send_seq(struct kbd *kb, uint32_t time, const uint8_t *seq)
 {
-    for (; *seq; seq++)
+    for (; *seq; seq++) {
+        if (*seq == FLICK_UC) {
+            /* marker + 16-bit codepoint LE (unicode-only glyphs on the
+             * numeric/abc faces): exact character via the COMP/Copy path */
+            uint32_t cp = (uint32_t)seq[1] | ((uint32_t)seq[2] << 8);
+            flick_send_unicode(kb, time, cp);
+            seq += 2;
+            continue;
+        }
         flick_send_key(kb, time, *seq);
+    }
 }
 
-/* 0x01 marker + a UCS-4 codepoint: deliver the exact unicode character via
- * the Copy mechanism (temp keymap + COMP key, keycode 135). Clients resolve
- * key events with the PHYSICAL keyboard's keymap on this compositor, so
- * custom XKB levels for evdev 242-245 came out as XF86 keys; raw `shift +
- * slash/1` wraps lose the shift and reached mozc as `/` and `1`. Sending the
- * final keysym through the COMP path bypasses both problems. */
-#define FLICK_UC 0x01
-static void
-flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
-{
-    create_and_upload_keymap(kb, kb->layout->keymap_name, uc);
-    zwp_virtual_keyboard_v1_modifiers(kb->vkbd, 0, 0, 0, 0);
-    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127, /* COMP key */
-                                WL_KEYBOARD_KEY_STATE_PRESSED);
-    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127,
-                                WL_KEYBOARD_KEY_STATE_RELEASED);
-}
-
-/* current layout id (kb->layout is a pointer into kb->layouts) */
 static enum layout_id
 kana_layout_id(struct kbd *kb)
 {
@@ -790,9 +860,19 @@ kbd_press_key(struct kbd *kb, struct key *k, uint32_t time)
         kbd_draw_key(kb, k, Press);
         break;
     case KanaMod:
-        /* one-shot modifier layer: switch immediately so the labels change
+        /* one-shot modifier layer (or a face switch like ☆123/ABC when the
+         * key carries a code): switch immediately so the labels change
          * while the finger is still down (visual feedback requirement);
-         * safe because these layers have the SAME 4-row grid. */
+         * safe because these layers have the SAME 4-row grid. A nonzero
+         * code is a plain keycode sent on press (e.g. KEY_MUHENKAN = IME
+         * off when leaving the kana face) - no release here; kbd_unpress_key
+         * does NOT touch KanaMod, so release it right away. */
+        if (k->code) {
+            zwp_virtual_keyboard_v1_key(kb->vkbd, time, k->code,
+                                        WL_KEYBOARD_KEY_STATE_PRESSED);
+            zwp_virtual_keyboard_v1_key(kb->vkbd, time, k->code,
+                                        WL_KEYBOARD_KEY_STATE_RELEASED);
+        }
         kbd_switch_layout(kb, k->layout, kbd_get_layer_index(kb, k->layout));
         break;
     case KanaCancel:
