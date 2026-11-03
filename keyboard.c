@@ -101,9 +101,9 @@ static const struct flick_entry kana_num_table[] = {
     { "{\n}6|\n\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
     { "「\n」7：\n☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
     { "〒\n々8〆\n○", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
-    { ":\n9;'\n\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
+    { ":\n; 9 '\n\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
     { "()[]", { UC('('), UC(')'), UC('['), UC(']'), END } },
-    { "…\n0〜・", { UC(0x2026), UC(0x301C), C(KEY_0), UC(0x30FB), END } },
+    { "…\n〜0・", { UC(0x2026), UC(0x301C), C(KEY_0), UC(0x30FB), END } },
     { ".,-/", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
     {0},
 };
@@ -284,6 +284,14 @@ kana_layout_id(struct kbd *kb)
 
 /* Emit the flick result for a released kana key and handle the one-shot
  * fallback to the plain layer. Called at unpress with the touch vector. */
+/* evdev letter scancodes are three non-contiguous runs (QWERTY rows) */
+static bool
+is_letter_scancode(uint8_t sc)
+{
+    return (sc >= KEY_Q && sc <= KEY_P) || (sc >= KEY_A && sc <= KEY_L) ||
+           (sc >= KEY_Z && sc <= KEY_M);
+}
+
 void
 kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
                uint32_t time)
@@ -333,7 +341,7 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
                 p += 2;
                 continue;
             }
-            if (*p >= KEY_A && *p <= KEY_Z) {
+            if (is_letter_scancode(*p)) {
                 /* SH wrap: Shift modifiers + the letter keycode */
                 flick_send_key(kb, time, *p | SH);
                 any_letter = true;
