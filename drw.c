@@ -140,18 +140,21 @@ drw_draw_text(struct drwsurf *ds, Color color, uint32_t x, uint32_t y,
     cairo_set_source_rgba(
         d->cairo, color.bgra[2] / (double)255, color.bgra[1] / (double)255,
         color.bgra[0] / (double)255, color.bgra[3] / (double)255);
-    cairo_move_to(d->cairo, x + w / 2, y + h / 2);
+    cairo_move_to(d->cairo, x + b, y + h / 2);
 
     pango_layout_set_text(d->layout, label, -1);
     pango_layout_set_width(d->layout, (w - (b * 2)) * PANGO_SCALE);
     /* multi-line labels (numeric face): don't cap the height or the 3rd
-     * line gets clipped; centering uses the measured size below */
+     * line gets clipped; center each line (Pango default is left) and let
+     * long lines wrap instead of spilling out of the key */
     pango_layout_set_height(d->layout, -1);
+    pango_layout_set_alignment(d->layout, PANGO_ALIGN_CENTER);
+    pango_layout_set_wrap(d->layout, PANGO_WRAP_WORD_CHAR);
 
     int width, height;
     pango_layout_get_pixel_size(d->layout, &width, &height);
 
-    cairo_rel_move_to(d->cairo, -width / 2, -height / 2);
+    cairo_rel_move_to(d->cairo, 0, -height / 2);
 
     pango_cairo_show_layout(d->cairo, d->layout);
     cairo_restore(d->cairo);

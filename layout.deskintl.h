@@ -387,15 +387,15 @@ static struct key keys_kana_num[] = {
   {"あいう", "", 1.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
   {"「\n」7：\n☆", "", 1.0, KanaGly, .scheme = 0},
   {"〒\n々8〆\n○", "", 1.0, KanaGly, .scheme = 0},
-  {";\n9'\n\"", "", 1.0, KanaGly, .scheme = 0},
+  {":\n9;'\n\"", "", 1.0, KanaGly, .scheme = 0},
   {"Enter", "", 1.0, Code, KEY_ENTER, .scheme = 1},
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
   {"", "", 1.0, Pad, .scheme = 1},
-  {"(\n)[]", "", 1.0, KanaGly, .scheme = 0},
-  {"0\n〜…・", "", 1.0, KanaGly, .scheme = 0},
-  {".\n,-/", "", 1.0, KanaGly, .scheme = 0},
+  {"()[]", "", 1.0, KanaGly, .scheme = 0},
+  {"…\n0〜・", "", 1.0, KanaGly, .scheme = 0},
+  {".,-/", "", 1.0, KanaGly, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
 
   /* end of layout */

@@ -101,9 +101,9 @@ static const struct flick_entry kana_num_table[] = {
     { "{\n}6|\n\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
     { "「\n」7：\n☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
     { "〒\n々8〆\n○", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
-    { ";\n9'\n\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
+    { ":\n9;'\n\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
     { "()[]", { UC('('), UC(')'), UC('['), UC(']'), END } },
-    { "0\n〜…・", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
+    { "…\n0〜・", { UC(0x2026), UC(0x301C), C(KEY_0), UC(0x30FB), END } },
     { ".,-/", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
     {0},
 };
@@ -334,7 +334,8 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
                 continue;
             }
             if (*p >= KEY_A && *p <= KEY_Z) {
-                flick_send_unicode(kb, time, 'A' + (*p - KEY_A));
+                /* SH wrap: Shift modifiers + the letter keycode */
+                flick_send_key(kb, time, *p | SH);
                 any_letter = true;
             } else {
                 flick_send_key(kb, time, *p);
