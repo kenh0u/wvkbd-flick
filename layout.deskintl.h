@@ -377,7 +377,7 @@ static struct key keys_kana_num[] = {
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
   {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
-  {"4←↑→↓", "", 1.0, KanaGly, .scheme = 0},
+  {"↑\n←4→\n↓", "", 1.0, KanaGly, .scheme = 0},
   {"5+✕÷×", "", 1.0, KanaGly, .scheme = 0},
   {"6{}|\\", "", 1.0, KanaGly, .scheme = 0},
   {"空白", "", 1.0, Code, KEY_SPACE},
@@ -433,7 +433,7 @@ static struct key keys_kana_abc[] = {
   {"", "", 1.0, Pad, .scheme = 1},
   {"⇧", "", 1.0, Mod, Shift, .scheme = 1},
   {"'\"(),", "", 1.0, KanaGly, .scheme = 0},
-  {".?!", "", 1.0, KanaGly, .scheme = 0},
+  {".,?!", "", 1.0, KanaGly, .scheme = 0},
   {"", "", 1.0, Pad, .scheme = 1},
 
   /* end of layout */

@@ -96,7 +96,7 @@ static const struct flick_entry kana_num_table[] = {
     { "1`~!@", { C(KEY_1), UC('`'), UC('~'), UC('!'), UC('@') } },
     { "2#$%^", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
     { "3&*-=", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
-    { "4←↑→↓", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
+    { "↑\n←4→\n↓", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
     { "5+✕÷×", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
     { "6{}|\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
     { "7「」：☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
@@ -123,7 +123,7 @@ static const struct flick_entry kana_abc_table[] = {
     { "tuv", { C(KEY_T), C(KEY_U), C(KEY_V), END, END } },
     { "wxyz", { C(KEY_W), C(KEY_X), C(KEY_Y), C(KEY_Z), END } },
     { "'\"(),", { C(KEY_APOSTROPHE), UC('"'), UC('('), UC(')'), UC(',') } },
-    { ".?!", { C(KEY_DOT), C(KEY_COMMA), UC('?'), UC('!'), END } },
+    { ".,?!", { C(KEY_DOT), C(KEY_COMMA), UC('?'), UC('!'), END } },
     {0},
 };
 
@@ -1128,8 +1128,12 @@ kbd_clear_last_popup(struct kbd *kb)
 void
 kbd_draw_key(struct kbd *kb, struct key *k, enum key_draw_type type)
 {
-    const char *label = ((kb->mods & Shift)||((kb->mods & CapsLock) && 
-        strlen(k->label) == 1 && isalpha(k->label[0]))) ? k->shift_label : k->label;
+    const char *label = k->label;
+    if (k->shift_label[0] &&
+        ((kb->mods & Shift) ||
+         ((kb->mods & CapsLock) && strlen(k->label) == 1 &&
+          isalpha(k->label[0]))))
+        label = k->shift_label;
     if (kb->debug)
         fprintf(stderr, "Draw key +%d+%d %dx%d -> %s\n", k->x, k->y, k->w, k->h,
                 label);
