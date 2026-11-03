@@ -93,18 +93,18 @@ static const struct punct_entry kana_punct_table[] = {
  * umbriel's physical-keymap fold and the client); only unshifted ASCII
  * (digits, - = ; ' , . /) stay as plain scancodes. */
 static const struct flick_entry kana_num_table[] = {
-    { "1\n`~!@", { C(KEY_1), UC('`'), UC('~'), UC('!'), UC('@') } },
-    { "2\n#$%^", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
-    { "3\n&*-=", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
-    { "4\n←↑→↓", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
-    { "5\n+✕÷×", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
-    { "6\n{}|\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
-    { "7\n「」：☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
-    { "8\n〒々〆○", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
-    { "9\n;:'\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
-    { "(\n)[]", { UC('('), UC(')'), UC('['), UC(']'), END } },
+    { "~\n`1!\n@", { C(KEY_1), UC('`'), UC('~'), UC('!'), UC('@') } },
+    { "$\n#2%\n^", { C(KEY_2), UC('#'), UC('$'), UC('%'), UC('^') } },
+    { "&\n*3-\n=", { C(KEY_3), UC('&'), UC('*'), C(KEY_MINUS), C(KEY_EQUAL) } },
+    { "↑\n←4→\n↓", { C(KEY_4), UC(0x2190), UC(0x2191), UC(0x2192), UC(0x2193) } },
+    { "+\n✕5÷\n×", { C(KEY_5), UC('+'), UC(0x2715), UC(0x00F7), UC(0x00D7) } },
+    { "{\n}6|\n\\", { C(KEY_6), UC('{'), UC('}'), UC('|'), UC('\\') } },
+    { "「\n」7：\n☆", { C(KEY_7), UC(0x300C), UC(0x300D), UC(0xFF1A), UC(0x2606) } },
+    { "〒\n々8〆\n○", { C(KEY_8), UC(0x3012), UC(0x3005), UC(0x3006), UC(0x25CB) } },
+    { ";\n9'\n\"", { C(KEY_9), C(KEY_SEMICOLON), UC(':'), C(KEY_APOSTROPHE), UC('"') } },
+    { "()[]", { UC('('), UC(')'), UC('['), UC(']'), END } },
     { "0\n〜…・", { C(KEY_0), UC(0x301C), UC(0x2026), UC(0x30FB), END } },
-    { ".\n,-/", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
+    { ".,-/", { C(KEY_DOT), C(KEY_COMMA), C(KEY_MINUS), C(KEY_SLASH), END } },
     {0},
 };
 
