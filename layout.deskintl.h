@@ -383,7 +383,7 @@ static struct key keys_kana_num[] = {
   {"空白", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, Pad, .scheme = 1},
+  {"", "", 1.0, Pad, .scheme = 1},
   {"あいう", "", 1.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
   {"「\n」 7 ：\n☆", "", 1.0, KanaGly, .scheme = 0},
   {"〒\n々 8 〆\n○", "", 1.0, KanaGly, .scheme = 0},
@@ -421,7 +421,7 @@ static struct key keys_kana_abc[] = {
   {"空白", "", 1.0, Code, KEY_SPACE},
   {"", "", 0.0, EndRow},
 
-  {"゜", "", 1.0, Pad, .scheme = 1},
+  {"Control", "Control", 1.0, Mod, Ctrl, .scheme = 1},
   {"あいう", "", 1.0, KanaOn, KEY_HIRAGANA, .scheme = 1},
   {"pqrs", "PQRS", 1.0, KanaGly, .scheme = 0},
   {"tuv", "TUV", 1.0, KanaGly, .scheme = 0},
@@ -430,7 +430,7 @@ static struct key keys_kana_abc[] = {
   {"", "", 0.0, EndRow},
 
   {"⌨͕", "", 1.0, KanaOff, .scheme = 1},
-  {"", "", 1.0, Pad, .scheme = 1},
+  {"Caps", "Caps", 1.0, Mod, CapsLock, .scheme = 1},
   {"⇧", "", 1.0, Mod, Shift, .scheme = 1},
   {"'\"()", "", 1.0, KanaGly, .scheme = 0},
   {".,?!", "", 1.0, KanaGly, .scheme = 0},
@@ -450,7 +450,7 @@ static struct key keys_kana_abc[] = {
  * changed. Modifier cells (゛゜小) return/cross-switch at press. */
 static struct key keys_kana_dakuten[] = {
   {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
-  {"☆123", "", 1.0, KanaNoop, .scheme = 1},
+  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
   {"ゔ", "", 1.0, KanaGlyMut, .scheme = 0},
   {"が", "", 1.0, KanaGlyMut, .scheme = 0},
   {"ざ", "", 1.0, KanaGlyMut, .scheme = 0},
@@ -458,7 +458,7 @@ static struct key keys_kana_dakuten[] = {
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
-  {"ABC", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"だ", "", 1.0, KanaGlyMut, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"ば", "", 1.0, KanaGlyMut, .scheme = 0},
@@ -487,7 +487,7 @@ static struct key keys_kana_dakuten[] = {
 /* handakuten (゜): only the は column voices (ぱ row head); plain elsewhere */
 static struct key keys_kana_handakuten[] = {
   {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
-  {"☆123", "", 1.0, KanaNoop, .scheme = 1},
+  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
@@ -495,7 +495,7 @@ static struct key keys_kana_handakuten[] = {
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
-  {"ABC", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"ぱ", "", 1.0, KanaGlyMut, .scheme = 0},
@@ -526,7 +526,7 @@ static struct key keys_kana_handakuten[] = {
  * variants via the kana_small_table. */
 static struct key keys_kana_small[] = {
   {"Tab", "", 1.0, Code, KEY_TAB, .scheme = 1},
-  {"☆123", "", 1.0, KanaNoop, .scheme = 1},
+  {"☆123", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaNum], .scheme = 1},
   {"ぁ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},
@@ -534,7 +534,7 @@ static struct key keys_kana_small[] = {
   {"", "", 0.0, EndRow},
 
   {"🙂", "", 1.0, KanaNoop, .scheme = 1},
-  {"ABC", "", 1.0, KanaNoop, .scheme = 1},
+  {"ABC", "", 1.0, KanaMod, KEY_MUHENKAN, &layouts[KanaAbc], .scheme = 1},
   {"っ", "", 1.0, KanaGlySmall, .scheme = 0},
   {"", "", 1.0, KanaHide, .scheme = 2},
   {"", "", 1.0, KanaHide, .scheme = 2},

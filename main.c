@@ -1126,6 +1126,14 @@ main(int argc, char **argv)
             anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
                      ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
             anchor_user_specified = true;
+        } else if ((!strcmp(argv[i], "--left")) || (!strcmp(argv[i], "-left"))) {
+            anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
+                     ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT;
+            anchor_user_specified = true;
+        } else if ((!strcmp(argv[i], "--right")) || (!strcmp(argv[i], "-right"))) {
+            anchor = ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
+                     ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT;
+            anchor_user_specified = true;
         } else if ((!strcmp(argv[i], "-hidden")) ||
                    (!strcmp(argv[i], "--hidden"))) {
             hidden = true;

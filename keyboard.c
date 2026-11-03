@@ -330,11 +330,10 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
         }
         fprintf(stderr, "\n");
     }
-    /* ABC Shift latch: uppercase the letters (via COMP unicode - the SH
-     * wrap is lost between umbriel's physical-keymap fold and the client),
-     * everything else unchanged. The latch consumes on emit. */
-    bool abc_shift = (cur == KanaAbc) && (kb->mods & Shift);
-    if (seq && abc_shift) {
+    /* ABC Shift latch or CapsLock: uppercase the letters (via SH wrap),
+     * everything else unchanged. The Shift latch consumes on emit; CapsLock persists. */
+    bool abc_uppercase = (cur == KanaAbc) && ((kb->mods & Shift) || (kb->mods & CapsLock));
+    if (seq && abc_uppercase) {
         bool any_letter = false;
         for (const uint8_t *p = seq; *p; p++) {
             if (*p == FLICK_UC) {
@@ -349,12 +348,13 @@ kbd_flick_emit(struct kbd *kb, struct key *k, int32_t dx, int32_t dy,
                 flick_send_key(kb, time, *p);
             }
         }
-        if (any_letter)
-            kb->mods &= ~Shift; /* one-shot consume */
+        if (any_letter && (kb->mods & Shift)) {
+            kb->mods &= ~Shift; /* one-shot consume only Shift */
+            /* the latch (and thus the ⇧ highlight) changed state: repaint so
+             * the key colors match the actual modifier state */
+            kbd_draw_layout(kb);
+        }
         kbd_draw_key(kb, k, Unpress);
-        /* the latch (and thus the ⇧ highlight) changed state: repaint so
-         * the key colors match the actual modifier state */
-        kbd_draw_layout(kb);
         return;
     }
     if (seq) {
@@ -796,6 +796,17 @@ kbd_release_key(struct kbd *kb, uint32_t time)
         if (kb->kana_pending_switch == KanaOn) {
             zwp_virtual_keyboard_v1_key(kb->vkbd, time, KEY_HIRAGANA,
                                         WL_KEYBOARD_KEY_STATE_RELEASED);
+            if (kb->mods & Shift) {
+                zwp_virtual_keyboard_v1_key_mods(kb->vkbd, time, Shift,
+                                                WL_KEYBOARD_KEY_STATE_RELEASED);
+                kb->mods &= ~Shift;
+            }
+            if (kb->mods & CapsLock) {
+                zwp_virtual_keyboard_v1_key_mods(kb->vkbd, time, CapsLock,
+                                                WL_KEYBOARD_KEY_STATE_RELEASED);
+                kb->mods &= ~CapsLock;
+            }
+            zwp_virtual_keyboard_v1_modifiers(kb->vkbd, kb->mods, 0, 0, 0);
             kbd_switch_layout(kb, &kb->layouts[KanaFlick],
                               kbd_get_layer_index(kb, &kb->layouts[KanaFlick]));
         } else {
@@ -1143,8 +1154,9 @@ kbd_draw_key(struct kbd *kb, struct key *k, enum key_draw_type type)
     const char *label = k->label;
     if (k->shift_label[0] &&
         ((kb->mods & Shift) ||
-         ((kb->mods & CapsLock) && strlen(k->label) == 1 &&
-          isalpha(k->label[0]))))
+         ((kb->mods & CapsLock) &&
+          ((strlen(k->label) == 1 && isalpha(k->label[0])) ||
+           kbd_get_layer_index(kb, kb->layout) == KanaAbc))))
         label = k->shift_label;
     if (kb->debug)
         fprintf(stderr, "Draw key +%d+%d %dx%d -> %s\n", k->x, k->y, k->w, k->h,
