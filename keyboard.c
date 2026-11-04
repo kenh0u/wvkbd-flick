@@ -6,7 +6,10 @@
 #include <stdint.h>
 #include <sys/mman.h>
 #include <ctype.h>
-#include <time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "keyboard.h"
 #include <linux/input-event-codes.h>
 
@@ -231,57 +234,88 @@ kana_flick_dir(int32_t dx, int32_t dy)
         return dy > 0 ? FLICK_D : FLICK_U;
 }
 
-/* 0x01 marker in a flick sequence: the next 4 bytes (little-endian, 0-
- * terminated short) are a UCS-4 codepoint delivered via the Copy mechanism
- * (temp keymap + COMP key, keycode 135). Clients resolve key events with
- * the PHYSICAL keyboard's keymap on this compositor, so custom XKB levels
- * for evdev 242-245 came out as XF86 keys; raw `shift + slash/1` wraps
- * lose the shift and reached mozc as `/` and `1`. Sending the final
- * keysym through the COMP path bypasses both problems. */
+/* Deliver arbitrary text (including emojis and unicode sequences) by setting the
+ * Wayland clipboard (and primary selection) via wl-copy and sending Shift+Insert.
+ * Upstream wvkbd's approach of uploading a keymap with COMP (evdev 127 / XKB 135)
+ * fails whenever a physical keyboard exists or dynamic keymaps are not relayed,
+ * causing Chrome/Chromium to interpret 135 as the Menu (Context Menu / Right-Click) key. */
 static void
-flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
-{
-    if (kb->debug)
-        fprintf(stderr, "unicode: %04x via COMP\n", uc);
-    create_and_upload_keymap(kb, kb->layout->keymap_name, uc);
-    zwp_virtual_keyboard_v1_modifiers(kb->vkbd, 0, 0, 0, 0);
-    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127, /* COMP key */
-                                WL_KEYBOARD_KEY_STATE_PRESSED);
-    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127,
-                                WL_KEYBOARD_KEY_STATE_RELEASED);
-}
-
-/* send a full UTF-8 string (including ZWJ emoji sequences) via COMP */
-static void
-flick_send_unicode_str(struct kbd *kb, uint32_t time, const char *str)
+flick_copy_and_paste(struct kbd *kb, uint32_t time, const char *str)
 {
     if (!str || !*str)
         return;
-    const unsigned char *s = (const unsigned char *)str;
-    while (*s) {
-        uint32_t cp = 0;
-        if (*s < 0x80) {
-            cp = *s++;
-        } else if ((*s & 0xe0) == 0xc0) {
-            cp = (*s++ & 0x1f) << 6;
-            cp |= (*s++ & 0x3f);
-        } else if ((*s & 0xf0) == 0xe0) {
-            cp = (*s++ & 0x0f) << 12;
-            cp |= (*s++ & 0x3f) << 6;
-            cp |= (*s++ & 0x3f);
-        } else if ((*s & 0xf8) == 0xf0) {
-            cp = (*s++ & 0x07) << 18;
-            cp |= (*s++ & 0x3f) << 12;
-            cp |= (*s++ & 0x3f) << 6;
-            cp |= (*s++ & 0x3f);
-        } else {
-            s++;
-            continue;
+
+    if (kb->debug)
+        fprintf(stderr, "flick paste: '%s'\n", str);
+
+    pid_t p1 = fork();
+    if (p1 == 0) {
+        int devnull = open("/dev/null", O_RDWR);
+        if (devnull >= 0) {
+            dup2(devnull, STDOUT_FILENO);
+            dup2(devnull, STDERR_FILENO);
+            close(devnull);
         }
-        flick_send_unicode(kb, time, cp);
-        if (*s)
-            g_usleep(1000);
+        execlp("wl-copy", "wl-copy", "--", str, (char *)NULL);
+        _exit(127);
     }
+
+    pid_t p2 = fork();
+    if (p2 == 0) {
+        int devnull = open("/dev/null", O_RDWR);
+        if (devnull >= 0) {
+            dup2(devnull, STDOUT_FILENO);
+            dup2(devnull, STDERR_FILENO);
+            close(devnull);
+        }
+        execlp("wl-copy", "wl-copy", "-p", "--", str, (char *)NULL);
+        _exit(127);
+    }
+
+    if (p1 > 0) waitpid(p1, NULL, 0);
+    if (p2 > 0) waitpid(p2, NULL, 0);
+
+    /* Trigger paste via wtype (Shift+Insert pastes in both GUI and terminals) */
+    pid_t p3 = fork();
+    if (p3 == 0) {
+        int devnull = open("/dev/null", O_RDWR);
+        if (devnull >= 0) {
+            dup2(devnull, STDOUT_FILENO);
+            dup2(devnull, STDERR_FILENO);
+            close(devnull);
+        }
+        execlp("wtype", "wtype", "-M", "shift", "-k", "Insert", "-m", "shift", (char *)NULL);
+        _exit(127);
+    }
+    if (p3 > 0) waitpid(p3, NULL, 0);
+}
+
+static void
+flick_send_unicode_str(struct kbd *kb, uint32_t time, const char *str)
+{
+    flick_copy_and_paste(kb, time, str);
+}
+
+static void
+flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
+{
+    char buf[8] = {0};
+    if (uc < 0x80) {
+        buf[0] = (char)uc;
+    } else if (uc < 0x800) {
+        buf[0] = (char)(0xC0 | (uc >> 6));
+        buf[1] = (char)(0x80 | (uc & 0x3F));
+    } else if (uc < 0x10000) {
+        buf[0] = (char)(0xE0 | (uc >> 12));
+        buf[1] = (char)(0x80 | ((uc >> 6) & 0x3F));
+        buf[2] = (char)(0x80 | (uc & 0x3F));
+    } else if (uc < 0x110000) {
+        buf[0] = (char)(0xF0 | (uc >> 18));
+        buf[1] = (char)(0x80 | ((uc >> 12) & 0x3F));
+        buf[2] = (char)(0x80 | ((uc >> 6) & 0x3F));
+        buf[3] = (char)(0x80 | (uc & 0x3F));
+    }
+    flick_send_unicode_str(kb, time, buf);
 }
 
 /* current layout id (kb->layout is a pointer into kb->layouts) */
