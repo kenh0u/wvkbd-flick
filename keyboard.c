@@ -304,14 +304,23 @@ flick_send_unicode_str(struct kbd *kb, uint32_t time, const char *str)
 static void
 flick_send_unicode(struct kbd *kb, uint32_t time, uint32_t uc)
 {
-    if (kb->debug)
-        fprintf(stderr, "unicode: %04x via COMP\n", uc);
-    create_and_upload_keymap(kb, kb->layout->keymap_name, uc);
-    zwp_virtual_keyboard_v1_modifiers(kb->vkbd, 0, 0, 0, 0);
-    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127, /* COMP key */
-                                WL_KEYBOARD_KEY_STATE_PRESSED);
-    zwp_virtual_keyboard_v1_key(kb->vkbd, time, 127,
-                                WL_KEYBOARD_KEY_STATE_RELEASED);
+    char buf[8] = {0};
+    if (uc < 0x80) {
+        buf[0] = (char)uc;
+    } else if (uc < 0x800) {
+        buf[0] = (char)(0xC0 | (uc >> 6));
+        buf[1] = (char)(0x80 | (uc & 0x3F));
+    } else if (uc < 0x10000) {
+        buf[0] = (char)(0xE0 | (uc >> 12));
+        buf[1] = (char)(0x80 | ((uc >> 6) & 0x3F));
+        buf[2] = (char)(0x80 | (uc & 0x3F));
+    } else if (uc < 0x110000) {
+        buf[0] = (char)(0xF0 | (uc >> 18));
+        buf[1] = (char)(0x80 | ((uc >> 12) & 0x3F));
+        buf[2] = (char)(0x80 | ((uc >> 6) & 0x3F));
+        buf[3] = (char)(0x80 | (uc & 0x3F));
+    }
+    flick_send_unicode_str(kb, time, buf);
 }
 
 /* current layout id (kb->layout is a pointer into kb->layouts) */
