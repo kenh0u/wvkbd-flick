@@ -260,8 +260,6 @@ flick_copy_and_paste(struct kbd *kb, uint32_t time, const char *str)
                 close(devnull);
             }
             execlp("sh", "sh", "-c",
-                   "exec 200>\"${XDG_RUNTIME_DIR:-/run/user/1000}/wvkbd-paste.lock\"\n"
-                   "flock 200\n"
                    "has_cb=0; sens_cb=0\n"
                    "if prev_cb=$(wl-paste -n 2>/dev/null); then\n"
                    "    has_cb=1\n"
