@@ -246,48 +246,53 @@ flick_copy_and_paste(struct kbd *kb, uint32_t time, const char *str)
         return;
 
     if (kb->debug)
-        fprintf(stderr, "flick paste: '%s'\n", str);
+        fprintf(stderr, "flick paste (sanitized): '%s'\n", str);
 
+    /* Double-fork to perform paste and restore asynchronously without blocking the OSK */
     pid_t p1 = fork();
     if (p1 == 0) {
-        int devnull = open("/dev/null", O_RDWR);
-        if (devnull >= 0) {
-            dup2(devnull, STDOUT_FILENO);
-            dup2(devnull, STDERR_FILENO);
-            close(devnull);
+        pid_t p2 = fork();
+        if (p2 == 0) {
+            int devnull = open("/dev/null", O_RDWR);
+            if (devnull >= 0) {
+                dup2(devnull, STDOUT_FILENO);
+                dup2(devnull, STDERR_FILENO);
+                close(devnull);
+            }
+            execlp("sh", "sh", "-c",
+                   "exec 200>\"${XDG_RUNTIME_DIR:-/run/user/1000}/wvkbd-paste.lock\"\n"
+                   "flock 200\n"
+                   "has_cb=0; sens_cb=0\n"
+                   "if prev_cb=$(wl-paste -n 2>/dev/null); then\n"
+                   "    has_cb=1\n"
+                   "    if wl-paste -l 2>/dev/null | grep -q 'passwordManagerHint'; then sens_cb=1; fi\n"
+                   "fi\n"
+                   "has_prim=0; sens_prim=0\n"
+                   "if prev_prim=$(wl-paste -p -n 2>/dev/null); then\n"
+                   "    has_prim=1\n"
+                   "    if wl-paste -p -l 2>/dev/null | grep -q 'passwordManagerHint'; then sens_prim=1; fi\n"
+                   "fi\n"
+                   "wl-copy --sensitive -- \"$1\"\n"
+                   "wl-copy -p --sensitive -- \"$1\"\n"
+                   "wtype -M shift -k Insert -m shift\n"
+                   "sleep 0.08\n"
+                   "if [ $has_cb -eq 1 ]; then\n"
+                   "    if [ $sens_cb -eq 1 ]; then wl-copy --sensitive -- \"$prev_cb\"; else wl-copy -- \"$prev_cb\"; fi\n"
+                   "else\n"
+                   "    wl-copy --clear\n"
+                   "fi\n"
+                   "if [ $has_prim -eq 1 ]; then\n"
+                   "    if [ $sens_prim -eq 1 ]; then wl-copy -p --sensitive -- \"$prev_prim\"; else wl-copy -p -- \"$prev_prim\"; fi\n"
+                   "else\n"
+                   "    wl-copy -p --clear\n"
+                   "fi\n",
+                   "sh", str, (char *)NULL);
+            _exit(127);
         }
-        execlp("wl-copy", "wl-copy", "--", str, (char *)NULL);
-        _exit(127);
+        _exit(0);
     }
-
-    pid_t p2 = fork();
-    if (p2 == 0) {
-        int devnull = open("/dev/null", O_RDWR);
-        if (devnull >= 0) {
-            dup2(devnull, STDOUT_FILENO);
-            dup2(devnull, STDERR_FILENO);
-            close(devnull);
-        }
-        execlp("wl-copy", "wl-copy", "-p", "--", str, (char *)NULL);
-        _exit(127);
-    }
-
-    if (p1 > 0) waitpid(p1, NULL, 0);
-    if (p2 > 0) waitpid(p2, NULL, 0);
-
-    /* Trigger paste via wtype (Shift+Insert pastes in both GUI and terminals) */
-    pid_t p3 = fork();
-    if (p3 == 0) {
-        int devnull = open("/dev/null", O_RDWR);
-        if (devnull >= 0) {
-            dup2(devnull, STDOUT_FILENO);
-            dup2(devnull, STDERR_FILENO);
-            close(devnull);
-        }
-        execlp("wtype", "wtype", "-M", "shift", "-k", "Insert", "-m", "shift", (char *)NULL);
-        _exit(127);
-    }
-    if (p3 > 0) waitpid(p3, NULL, 0);
+    if (p1 > 0)
+        waitpid(p1, NULL, 0);
 }
 
 static void
